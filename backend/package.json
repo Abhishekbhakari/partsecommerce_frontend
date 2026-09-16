@@ -11,9 +11,9 @@
     "lint": "eslint \"src/**/*.ts\"",
     "lint:fix": "eslint \"src/**/*.ts\" --fix",
     "format": "prettier --write \"src/**/*.ts\"",
-    "db:migrate": "sequelize-cli db:migrate --config src/Common/database/config/database.ts",
-    "db:migrate:undo": "sequelize-cli db:migrate:undo --config src/Common/database/config/database.ts",
-    "db:migrate:undo:all": "sequelize-cli db:migrate:undo:all --config src/Common/database/config/database.ts",
+    "db:migrate": "sequelize-cli db:migrate --config sequelize.config.js --migrations-path src/database/migrations",
+    "db:migrate:undo": "sequelize-cli db:migrate:undo --config sequelize.config.js --migrations-path src/database/migrations",
+    "db:migrate:undo:all": "sequelize-cli db:migrate:undo:all --config sequelize.config.js --migrations-path src/database/migrations",
     "db:seed": "ts-node -r tsconfig-paths/register src/database/seeders/run-seed.ts"
   },
   "keywords": [

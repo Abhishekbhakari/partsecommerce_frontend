@@ -43,7 +43,7 @@ export const ProductListQuerySchema = z.object({
     brand: z.string().optional(),
     priceMin: z.coerce.number().optional(),
     priceMax: z.coerce.number().optional(),
-    sort: z.enum(['price_asc', 'price_desc', 'newest', 'rating']).optional(),
+    sort: z.enum(['price_asc', 'price_desc', 'newest', 'rating', 'popular']).optional(),
     page: z.coerce.number().int().positive().optional(),
     pageSize: z.coerce.number().int().positive().optional(),
     q: z.string().optional()

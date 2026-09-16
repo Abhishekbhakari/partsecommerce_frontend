@@ -12,7 +12,9 @@ const SORT_MAP: Record<string, Order> = {
     price_asc: [['basePrice', 'ASC']],
     price_desc: [['basePrice', 'DESC']],
     newest: [['createdAt', 'DESC']],
-    rating: [['avgRating', 'DESC']]
+    rating: [['avgRating', 'DESC']],
+    // "Most Popular" — reviewCount is the closest signal we track to real popularity/sales rank.
+    popular: [['reviewCount', 'DESC'], ['avgRating', 'DESC']]
 };
 
 class ProductRepository {

@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { type AxiosResponse } from "axios";
 
 /** sessionStorage key for the persisted auth session (token + user); mirrored by redux/authSlice. */
 export const AUTH_STORAGE_KEY = "spareparts_auth";
@@ -59,8 +59,19 @@ function processQueue(error: unknown, token: string | null) {
   failedQueue = [];
 }
 
+/** Backend wraps every response as `{ success, message, data }` (see docs/CODING_STANDARDS.md).
+ * Unwrap it here so every service call can treat `response.data` as the actual payload — the
+ * shape every call site (and its TS generic, `api.get<T>`) already assumes. */
+function unwrapEnvelope(response: AxiosResponse): AxiosResponse {
+  const body = response.data as { success?: boolean; data?: unknown } | null;
+  if (body && typeof body === "object" && "success" in body && "data" in body) {
+    response.data = body.data;
+  }
+  return response;
+}
+
 api.interceptors.response.use(
-  (response) => response,
+  (response) => unwrapEnvelope(response),
   async (error) => {
     const originalRequest = error.config ?? {};
     if (error.response?.status !== 401 || originalRequest._retry) {
