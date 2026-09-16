@@ -1,51 +1,30 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, ShieldCheck, Truck, Headphones } from "lucide-react";
+import { ShieldCheck, Truck, Headphones } from "lucide-react";
 import { useHome } from "./index.hook";
+import HeroCarousel from "./HeroCarousel";
 import FitmentFinder from "../FitmentFinder";
 import { ProductCard } from "@/Common/components/ProductCard";
 import { Spinner } from "@/Common/components/ui/spinner";
-import { Button } from "@/Common/components/ui/button";
 
 export default function Home() {
   const { categories, featured, loading, error } = useHome();
 
   return (
     <div className="flex flex-col">
-      <section className="bg-gradient-to-br from-primary to-[hsl(214,60%,14%)] text-primary-foreground">
-        <div className="container grid grid-cols-1 items-center gap-8 py-10 sm:py-14 lg:grid-cols-2 lg:py-20">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-accent">Genuine Parts, Right Fit</p>
-            <h1 className="mt-2 text-3xl font-extrabold leading-tight sm:text-4xl lg:text-5xl">
-              5,000+ spare parts, verified for your exact vehicle.
-            </h1>
-            <p className="mt-4 max-w-lg text-sm text-primary-foreground/80 sm:text-base">
-              Skip the guesswork. Search by part number, OEM code, or your vehicle's make, model, and year — every listing
-              shows verified fitment before you buy.
-            </p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link to="/products">
-                <Button variant="accent" size="lg">
-                  Shop All Parts
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
-              <Link to="/fitment-finder">
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="border-white/30 bg-transparent text-primary-foreground hover:bg-white/10 hover:text-primary-foreground"
-                >
-                  Find Parts for My Vehicle
-                </Button>
-              </Link>
-            </div>
-          </div>
-          <FitmentFinder />
+      <HeroCarousel />
+
+      {/* Fitment finder floats up over the carousel's bottom edge as an elevated card — the
+          same "search widget overlapping the hero" pattern travel/marketplace giants use so
+          the single most useful action on the page reads as unmissable, not buried below. */}
+      <section className="container -mt-8 sm:-mt-10">
+        <div className="rounded-2xl bg-card p-4 shadow-raised sm:p-6">
+          <p className="mb-3 text-sm font-bold text-foreground">Find parts for your vehicle</p>
+          <FitmentFinder variant="inline" />
         </div>
       </section>
 
-      <section className="border-b border-border bg-secondary/50">
-        <div className="container grid grid-cols-3 gap-4 py-6 text-center text-xs font-semibold sm:text-sm">
+      <section className="border-b border-border">
+        <div className="container grid grid-cols-3 gap-4 py-8 text-center text-xs font-semibold sm:text-sm">
           <div className="flex flex-col items-center gap-1.5">
             <ShieldCheck className="h-5 w-5 text-primary" />
             Genuine Parts Guarantee
