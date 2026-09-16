@@ -27,6 +27,9 @@ export function useAdminProductForm() {
   const isEdit = Boolean(slug);
 
   const [form, setForm] = useState(emptyForm);
+  // The route param is the product's slug (needed for the public GET /products/:slug lookup),
+  // but PATCH /admin/products/:id takes the numeric id — captured here once the product loads.
+  const [productId, setProductId] = useState<number | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
@@ -44,6 +47,7 @@ export function useAdminProductForm() {
       .getById(slug)
       .then((res) => {
         const p = res.data;
+        setProductId(p.id);
         setForm({
           title: p.title,
           sku: p.sku,
@@ -84,8 +88,8 @@ export function useAdminProductForm() {
         categoryId: Number(parsed.data.categoryId),
         brandId: Number(parsed.data.brandId)
       };
-      if (isEdit && slug) {
-        await adminProductService.update(Number(slug), payload as any);
+      if (isEdit && productId != null) {
+        await adminProductService.update(productId, payload as any);
         toast.success("Product updated");
       } else {
         await adminProductService.create(payload as any);
