@@ -122,3 +122,112 @@ connectivity itself is untested end-to-end — the code is structurally ready to
 - Did **not** verify against a live PostgreSQL instance (none available in this environment) —
   `sequelize.authenticate()` in `server.ts` will surface any real connection issue at boot; the
   migration file has not been run against real Postgres and should be smoke-tested first.
+
+## Phase 2
+
+All work below was verified against a live server (`npm run dev`, Postgres in Docker on :5433,
+migrated + seeded), not just compiled. `npx tsc --noEmit` is clean and `npx eslint "src/**/*.ts"`
+has 0 errors (3 pre-existing/expected stylistic warnings, none new besides one intentional unused
+destructure in the staff-response sanitizer below).
+
+### 1. Image upload endpoint (new)
+
+- `POST /api/v1/admin/uploads/image` — admin-auth + `CATALOG_MANAGER_ROLES`, multipart field
+  **`file`**. Stores to `backend/uploads/` (created, gitignored except `.gitkeep`), served
+  statically at `/uploads/<filename>` via `express.static` (mounted in `app.ts` before the routers).
+  Returns `{ success, message, data: { url, filename } }` — `url` is an **absolute** URL
+  (`${req.protocol}://${req.get('host')}/uploads/<filename>`) so it's directly usable as an
+  `<img src>` regardless of which origin the frontend is served from.
+- `DELETE /api/v1/admin/uploads/image/:filename` — best-effort delete (404/missing file is
+  swallowed, never 500s); rejects filenames containing `/`, `\`, or `..` to prevent path traversal.
+- Behind a swappable `ImageStorage` interface (mirrors the existing `OtpSender` pattern) at
+  `FoundationalService/MasterManagement/api/uploads/services/ImageStorage.ts` — default
+  `LocalDiskImageStorage`; swap `setImageStorage()` for an S3/Cloudinary implementation later
+  without touching the controller/service.
+- **Reuse this one endpoint** for both product images (`Product.images: string[]`) and banner
+  images (`Banner.imageUrl`) — upload first, then include the returned `url` in the product/banner
+  create-or-update payload.
+- Live-verified: uploaded a real PNG, confirmed the returned URL was servable via a follow-up GET
+  (200, correct `content-type: image/png`), deleted it, confirmed the follow-up GET now 404s, and
+  confirmed a second delete of the same filename still returns 200 (idempotent, no 500). Also
+  confirmed unauthenticated requests get 401.
+
+  ```
+  $ curl -X POST http://localhost:4000/api/v1/admin/uploads/image \
+      -H "Authorization: Bearer <admin token>" -F "file=@test.png;type=image/png"
+  {"success":true,"message":"Record created successfully.",
+   "data":{"url":"http://localhost:4000/uploads/0bfd507e-452c-48af-b312-212418d8698f.png",
+           "filename":"0bfd507e-452c-48af-b312-212418d8698f.png"}}
+
+  $ curl -o /dev/null -w "%{http_code}" http://localhost:4000/uploads/0bfd507e-....png
+  200
+  ```
+
+### 2. Guest cart merge-on-login (new)
+
+- `CartService.mergeGuestCartIntoUser(sessionId, userId)` (new method in
+  `CommerceDomain/CartAndCheckout/api/cart/cart.service.ts`) sums quantities for overlapping
+  variants, adds the rest, then deletes the now-empty guest cart (`CartItem` rows cascade-delete
+  via FK `ON DELETE CASCADE`).
+- Wired into `CustomerAuthController` (`FoundationalService/CustomerAccountManagement/api/auth/
+  customerAuth.controller.ts`) — called after tokens are issued on **OTP verify, email login,
+  email register, and Google auth**, reading the guest cart from the `X-Cart-Session` request
+  header. Merge failures are logged and swallowed — they never block login.
+- Live-verified: added a guest-session item (variant 3, qty 2), registered a new customer with
+  the same `X-Cart-Session` header, confirmed the item appeared in the new user's cart and the
+  guest cart was gone. Then added qty 5 to a *second* guest session for the same variant, logged
+  in as the same (now-existing) user with that session header, and confirmed the user cart's
+  quantity summed to 7 (2 + 5), not duplicated as a second line item.
+
+### 3. Coupons / banners / staff — verified live, one bug found and fixed each
+
+- **Coupons**: create/list/update/delete all worked correctly on the first pass (percentage type,
+  `minOrderValue`/`maxDiscount`, `active` toggle). No changes needed.
+- **Banners**: create/list/delete worked; **found and fixed a too-strict validation bug** — `link`
+  was `z.string().url()`, which rejects in-app relative paths like `/products` (the realistic case
+  for "link to a category/product page"), only accepting absolute URLs. Fixed in
+  `FoundationalService/MasterManagement/api/banners/validations/banner.validation.ts` to accept
+  either an absolute URL or a path starting with `/`. Re-verified: relative link (`/products`)
+  now accepts, absolute URL still accepts, garbage string still correctly 422s.
+- **Staff**: invite/list/change-role/remove/duplicate-email(409) all worked functionally, but
+  **found and fixed a real security bug** — every response (`invite`, `list`, `changeRole`) was
+  returning the raw Sequelize row including `passwordHash` (a bcrypt hash, but still shouldn't
+  leave the server). Fixed in `staff.service.ts` with a `publicStaff()` helper that strips
+  `passwordHash` before returning from all three methods. Re-verified the field is gone from all
+  three response shapes.
+
+### 4. Reviews / shipment tracking / search autocomplete — verified live, all correct as built
+
+Ran a full live flow: customer checkout → admin confirms order → admin creates shipment → customer
+tracks shipment → customer posts a review → admin approves it → public listing + `Product.avgRating`
+update.
+
+- **Reviews**: verified-purchase gate correctly requires an order in
+  `confirmed`/`packed`/`shipped`/`delivered` status; duplicate review on the same order item 409s;
+  reviewing a product never purchased 403s; newly-created reviews are `pending` and invisible on
+  the public `GET /products/:id/reviews` list until admin-approved; approval recalculates
+  `Product.avgRating`/`reviewCount` correctly (verified `avgRating` went from `0.00` to `5.00`
+  after a single 5-star approval).
+- **Shipment tracking**: `GET /shipments/:orderId/track` correctly enforces ownership — the
+  purchasing customer gets 200 with tracking history, a *different* logged-in customer gets 403.
+- **Search autocomplete**: `GET /search/autocomplete?q=oil` and `GET /search?q=oil` both return
+  correct, relevant results (title/part-number/OEM matching) with the documented response shapes.
+
+No bugs found in this group — all four behaved correctly against real data on the first pass.
+
+## What Frontend needs to know (Phase 2 additions)
+
+- **Image upload contract**: `POST /api/v1/admin/uploads/image`, `multipart/form-data`, field
+  name **`file`** (not `image`), admin Bearer token required, role must be one of
+  `CATALOG_MANAGER_ROLES` (owner/manager/catalog_editor). Response:
+  `{ success, message, data: { url: string, filename: string } }` — `url` is already absolute,
+  use it directly as `<img src>` or in the product/banner payload's `images`/`imageUrl` field.
+  `DELETE /api/v1/admin/uploads/image/:filename` to remove (pass just the filename, not the full
+  URL) — safe to call even if the file's already gone.
+- **Banner `link` field** accepts a relative path (`/products`, `/category/brakes`) or an absolute
+  URL — no need to force full URLs in the banner form.
+- **Guest cart merge** is now implemented — no frontend changes required, it happens automatically
+  server-side on any successful customer auth call as long as the client keeps sending the same
+  `X-Cart-Session` header value through the login/register/OTP-verify/Google request that it was
+  using for the guest cart. After that call succeeds, switch to sending the `Authorization` header
+  (logged-in cart) — the old guest session cart will already be empty/deleted.

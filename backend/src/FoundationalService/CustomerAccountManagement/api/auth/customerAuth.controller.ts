@@ -3,7 +3,9 @@ import { ErrorHandler } from '../../../../Common/utils/ErrorHandler';
 import { sendSuccess } from '../../../../Common/utils/response';
 import HttpCode from '../../../../Common/constants/HttpCode';
 import HttpSuccessMessage from '../../../../Common/constants/HttpSuccessMessage';
+import WinstonLogger from '../../../../Common/logger/WinstonLogger';
 import CustomerAuthService from './customerAuth.service';
+import CartService from '../../../../CommerceDomain/CartAndCheckout/api/cart/cart.service';
 import {
     OtpRequestSchema,
     OtpVerifySchema,
@@ -14,6 +16,25 @@ import {
 
 const REFRESH_COOKIE_NAME = 'customerRefreshToken';
 const REFRESH_COOKIE_PATH = '/api/v1/auth';
+
+/**
+ * Guest carts are keyed by the `X-Cart-Session` header. On any auth path that issues fresh
+ * tokens (OTP verify, email login/register, Google), merge that session's guest cart into the
+ * now-known user's cart — see CartService.mergeGuestCartIntoUser. Never blocks login on failure.
+ */
+const mergeGuestCart = async (req: Request, userId: number): Promise<void> => {
+    try {
+        const headerSession = req.headers['x-cart-session'];
+        const sessionId = Array.isArray(headerSession) ? headerSession[0] : headerSession;
+        if (!sessionId) return;
+        await CartService.mergeGuestCartIntoUser(sessionId, userId);
+    } catch (error) {
+        WinstonLogger.logger.log({
+            message: `[CustomerAuthController] Guest cart merge failed for user ${userId}: ${(error as Error)?.message}`,
+            level: 'warn'
+        });
+    }
+};
 
 const setRefreshCookie = (res: Response, token: string) => {
     const maxAge = parseInt(process.env.JWT_REFRESH_EXPIRES_IN_MS || '604800000', 10);
@@ -42,6 +63,7 @@ class CustomerAuthController {
             const payload = OtpVerifySchema.parse(req.body);
             const result = await CustomerAuthService.verifyOtp(payload);
             setRefreshCookie(res, result.refreshToken);
+            await mergeGuestCart(req, result.user.id);
             return sendSuccess(res, HttpCode.OK, result, HttpSuccessMessage.LOGIN_SUCCESS);
         } catch (error) {
             return ErrorHandler.commonErrorHandler(error, res);
@@ -53,6 +75,7 @@ class CustomerAuthController {
             const payload = EmailLoginSchema.parse(req.body);
             const result = await CustomerAuthService.emailLogin(payload);
             setRefreshCookie(res, result.refreshToken);
+            await mergeGuestCart(req, result.user.id);
             return sendSuccess(res, HttpCode.OK, result, HttpSuccessMessage.LOGIN_SUCCESS);
         } catch (error) {
             return ErrorHandler.commonErrorHandler(error, res);
@@ -64,6 +87,7 @@ class CustomerAuthController {
             const payload = EmailRegisterSchema.parse(req.body);
             const result = await CustomerAuthService.emailRegister(payload);
             setRefreshCookie(res, result.refreshToken);
+            await mergeGuestCart(req, result.user.id);
             return sendSuccess(res, HttpCode.CREATED, result, HttpSuccessMessage.RECORD_CREATED);
         } catch (error) {
             return ErrorHandler.commonErrorHandler(error, res);
@@ -75,6 +99,7 @@ class CustomerAuthController {
             const payload = GoogleAuthSchema.parse(req.body);
             const result = await CustomerAuthService.googleAuth(payload);
             setRefreshCookie(res, result.refreshToken);
+            await mergeGuestCart(req, result.user.id);
             return sendSuccess(res, HttpCode.OK, result, HttpSuccessMessage.LOGIN_SUCCESS);
         } catch (error) {
             return ErrorHandler.commonErrorHandler(error, res);

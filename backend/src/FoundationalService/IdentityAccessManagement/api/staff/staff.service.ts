@@ -5,9 +5,16 @@ import { DuplicateRecordException, RecordNotFoundException } from '../../../../C
 import { InviteStaffPayload } from './validations/staff.validation';
 import WinstonLogger from '../../../../Common/logger/WinstonLogger';
 
+/** Never leak `passwordHash` (or other sensitive columns) to API responses. */
+const publicStaff = (staff: { toJSON: () => Record<string, unknown> }) => {
+    const { passwordHash: _passwordHash, ...rest } = staff.toJSON();
+    return rest;
+};
+
 class StaffService {
-    list() {
-        return StaffRepository.findAll();
+    async list() {
+        const staff = await StaffRepository.findAll();
+        return staff.map(publicStaff);
     }
 
     async invite(payload: InviteStaffPayload) {
@@ -32,14 +39,15 @@ class StaffService {
             level: 'info'
         });
 
-        return staff;
+        return publicStaff(staff);
     }
 
     async changeRole(id: number, role: string) {
         const staff = await StaffRepository.findById(id);
         if (!staff) throw new RecordNotFoundException('Staff member not found.');
         await StaffRepository.updateRole(id, role);
-        return StaffRepository.findById(id);
+        const updated = await StaffRepository.findById(id);
+        return publicStaff(updated!);
     }
 
     async remove(id: number) {

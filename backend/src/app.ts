@@ -1,3 +1,4 @@
+import path from 'path';
 import express, { ErrorRequestHandler } from 'express';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
@@ -22,6 +23,7 @@ import { categoryRouter, categoryAdminRouter } from './FoundationalService/Maste
 import { brandRouter, brandAdminRouter } from './FoundationalService/MasterManagement/api/brands/brand.router';
 import couponRouter from './FoundationalService/MasterManagement/api/coupons/coupon.router';
 import bannerRouter from './FoundationalService/MasterManagement/api/banners/banner.router';
+import uploadRouter from './FoundationalService/MasterManagement/api/uploads/upload.router';
 
 import { productRouter, productAdminRouter } from './CommerceDomain/CatalogManagement/api/products/product.router';
 import inventoryRouter from './CommerceDomain/CatalogManagement/api/products/inventory.router';
@@ -77,6 +79,9 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
+/* Static file serving for locally-stored uploads (see FoundationalService/MasterManagement/api/uploads). */
+app.use('/uploads', express.static(path.resolve(process.cwd(), 'uploads')));
+
 const globalLimiter = rateLimit({
     windowMs: 60 * 1000,
     max: 300,
@@ -127,6 +132,7 @@ app.use(`${API_BASE}/brands`, brandRouter);
 app.use(`${API_BASE}/admin/brands`, brandAdminRouter);
 app.use(`${API_BASE}/admin/coupons`, couponRouter);
 app.use(`${API_BASE}/admin/banners`, bannerRouter);
+app.use(`${API_BASE}/admin/uploads`, uploadRouter);
 
 // --- CommerceDomain: CatalogManagement ---
 app.use(`${API_BASE}/products`, productRouter);

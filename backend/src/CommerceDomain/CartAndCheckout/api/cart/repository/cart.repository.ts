@@ -63,6 +63,10 @@ class CartRepository {
     findCouponByCode(code: string) {
         return Coupon.findOne({ where: { code: code.toUpperCase() } });
     }
+
+    deleteCart(id: number) {
+        return Cart.destroy({ where: { id } });
+    }
 }
 
 export default new CartRepository();

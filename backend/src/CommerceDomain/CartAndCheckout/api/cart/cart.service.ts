@@ -124,6 +124,42 @@ class CartService {
         return { ...full!.toJSON(), ...this.computeTotals(full!) };
     }
 
+    /**
+     * Merges a guest (session-keyed) cart into a just-authenticated user's cart: sums quantities
+     * for overlapping variants, adds the rest, then deletes the now-empty guest cart. Called from
+     * CustomerAuthController after OTP verify / email login / register / Google auth issue tokens.
+     * Silently no-ops if there's no session id or no guest cart — never blocks login.
+     */
+    async mergeGuestCartIntoUser(sessionId: string | undefined | null, userId: number): Promise<void> {
+        if (!sessionId) return;
+        const guestCart = await CartRepository.findBySession(sessionId);
+        if (!guestCart || guestCart.userId) return; // already user-owned or doesn't exist
+
+        const guestFull = await CartRepository.findById(guestCart.id);
+        const guestItems = (guestFull as unknown as { items: { variantId: number; qty: number; priceAtAdd: number }[] } | null)?.items || [];
+
+        if (guestItems.length > 0) {
+            let userCart = await CartRepository.findByUser(userId);
+            if (!userCart) userCart = await CartRepository.create({ userId });
+
+            for (const item of guestItems) {
+                const existing = await CartRepository.findItem(userCart.id, item.variantId);
+                if (existing) {
+                    await CartRepository.updateItem(existing.id, existing.qty + item.qty);
+                } else {
+                    await CartRepository.createItem({
+                        cartId: userCart.id,
+                        variantId: item.variantId,
+                        qty: item.qty,
+                        priceAtAdd: item.priceAtAdd
+                    });
+                }
+            }
+        }
+
+        await CartRepository.deleteCart(guestCart.id);
+    }
+
     /** Simple pincode serviceability stub — every 6-digit Indian pincode is treated as serviceable. */
     checkPincode(pincode: string) {
         const serviceable = /^\d{6}$/.test(pincode);
