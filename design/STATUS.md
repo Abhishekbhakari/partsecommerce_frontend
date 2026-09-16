@@ -30,8 +30,82 @@
 - `NOTIFICATION_TEMPLATES.md` (email/SMS/WhatsApp copy) is explicitly lower priority, due Week 8 per the brief — not built in this pass.
 - File naming: this run's task used lowercase `design-system.md` (vs. brief's `DESIGN_SYSTEM.md`) and `account.html` covers the account/order-history pattern set as one file, consistent with the brief's own suggestion to cover login/profile/addresses/wishlist/orders "as one pattern set."
 
-## Not yet done
+## Not yet done (Phase 1 carry-over)
 
 - `ADMIN_SCREENS.md` written specs for the remaining admin modules (coupons, banners/CMS, reviews moderation, staff/roles, reports) — recommend a follow-up pass before Week 7 per `PROJECT_PLAN.md`.
 - `NOTIFICATION_TEMPLATES.md` — due Week 8.
-- Loading/error/skeleton states are described in `COMPONENT_LIBRARY.md` (DataTable `loading` prop, Toast, EmptyState) but not illustrated as separate mockup states — Frontend should implement per the component prop specs.
+
+---
+
+## Phase 2 — mobile bottom nav, elevation/polish pass (this run)
+
+Scope: `docs/PHASE2_ADDENDUM.md` §3 (mobile bottom nav) and §4 (visual design polish). No backend
+or frontend application code touched — design docs, tokens, and static mockups only, additive on
+top of Phase 1 (nothing renamed or removed, so the frontend already built against Phase 1 tokens
+keeps working unchanged).
+
+### New
+
+- **`design/MOBILE_NAV.md`** — full bottom tab bar spec. Decision: **4 tabs (Home, Categories,
+  Cart, Account), no dedicated Search tab** — search instead gets an always-visible field in the
+  mobile sticky header (justification in the doc §1). Covers icon set, active/inactive/pressed
+  states, cart badge placement, height (56px + `env(safe-area-inset-bottom)`), and which pages
+  replace the bar instead of stacking under it (PDP sticky add-to-cart bar, Cart's sticky checkout
+  bar, Checkout's sticky step footer, Order confirmation has no bottom bar at all).
+
+### Updated
+
+- **`design/tailwind.tokens.js`** — additive only: `spacing[14]` (56px, bottom-nav height),
+  `boxShadow.nav` (upward shadow for fixed bottom bars) and `boxShadow.raised` (elevated state over
+  colored/gradient surfaces), `backgroundImage['hero-gradient' | 'cta-gradient']` (named gradients
+  built from existing brand hex values, no new colors introduced). Nothing existing was touched.
+- **`design/design-system.md`** — new §10 "Elevation & Polish (Phase 2)": shadow-scale usage rules,
+  gradient usage on hero/CTA surfaces, micro-interaction states (hover/press/skeleton
+  loading/toast/badge-pulse), empty-state illustration house style (flat line-art, `neutral-300` +
+  one small accent touch, four named motifs), imagery-first card hierarchy, stock/discount/new
+  badge placement rules, and the rating-stars rendering spec (full/half/empty glyphs, not a bare
+  number). Also added a note pointing mockups at the real seed catalog
+  (`backend/src/database/seeders/run-seed.ts`) for any mockup meant to demonstrate a real
+  frontend↔backend data path.
+- **`design/COMPONENT_LIBRARY.md`** — added `BottomNav`, `SkeletonLoader`, an expanded `EmptyState`
+  with four named variants (`empty-cart`, `no-orders`, `no-search-results`, `no-wishlist-items`),
+  the rating-stars visual spec, and the stock/discount/new badge placement table.
+- **Mockups refreshed**: `home.html` (hero gradient + shadow-raised, mobile search row replacing
+  the old search-icon-only pattern, discount/new badges on product cards, finalized 4-tab bottom
+  nav with badge/active-indicator/safe-area), `product-detail.html` (sticky add-to-cart bar now
+  uses `shadow-nav` + safe-area padding + CTA gradient; part numbers/prices aligned to the real
+  seed product — Bosch `BP-4521` / `OEM-77123`, ₹1,299), `cart.html` (sticky checkout bar same
+  treatment; empty-cart state now has the real inline SVG illustration instead of a bare cart
+  icon), `listing.html` (bottom nav and its shadow token brought in line with the finalized 4-tab
+  spec — it already had an earlier draft nav), `checkout.html` (sticky step footer gets
+  `shadow-nav` + safe-area + CTA gradient for consistency with the other replaced-bar screens).
+
+### What the Frontend agent should pick up
+
+1. Read `design/MOBILE_NAV.md` first — it's the authoritative spec for §3 of the addendum,
+   supersedes the placeholder Home/Search/Cart/Account bar that shipped inline in the Phase 1
+   mockups (that draft had a Search tab and no badge/safe-area handling; the finalized spec drops
+   Search in favor of the header field and adds both).
+2. Pull the two new tokens (`spacing[14]`, `boxShadow.nav`/`raised`, `backgroundImage` gradients)
+   into `tailwind.config.js` alongside the Phase 1 set — same merge process as before, purely
+   additive.
+3. Build `BottomNav`, `SkeletonLoader`, and the expanded `EmptyState` (with its 4 named variants) as
+   shared components per `COMPONENT_LIBRARY.md` — `SkeletonLoader` in particular should replace
+   every bare spinner currently in the Phase 1 frontend build, not just new screens.
+4. Apply the badge/rating/card-hierarchy polish (§10.5–10.7 of `design-system.md`) to existing
+   `ProductCard` usages — this is a styling pass on top of working pages, not a rebuild, consistent
+   with addendum §5's framing.
+5. The four pages that replace the bottom nav (PDP, Cart, Checkout, Order Confirmation) need their
+   own sticky-bar safe-area handling even without the shared nav present — see `MOBILE_NAV.md` §7.
+
+### Not yet done (Phase 2)
+
+- Bottom nav / mobile search row was not added to `account.html` or `fitment-finder.html` mockups
+  in this pass (only `home.html`, `listing.html`, `product-detail.html`, `cart.html`,
+  `checkout.html` were touched, per the addendum's "most important mockups... at minimum" scope) —
+  Frontend should apply the same `BottomNav` component to those routes; the pattern is identical to
+  `home.html`'s, just a copy-paste of the nav block plus the standard mobile search row from the
+  header spec in `MOBILE_NAV.md` §5.
+- Loading/error/skeleton states are now specced (`SkeletonLoader` in `COMPONENT_LIBRARY.md`,
+  micro-interactions in `design-system.md` §10.3) but not illustrated as a separate mockup file —
+  Frontend should implement per the component prop spec, same note carried over from Phase 1.

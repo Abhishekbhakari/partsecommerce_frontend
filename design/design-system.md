@@ -225,3 +225,118 @@ Sizes: `sm` (32px h, text-sm, px-3), `md` (40px h, text-sm, px-4 — default), `
 Placeholder data reflects `docs/DATA_MODEL.md` field names so Frontend can map straight across: `sku`, `partNumber`, `oemNumber`, `basePrice` (displayed as ₹, converted from paise), `gstRate`, `avgRating`/`reviewCount`, `FitmentCompatibility` (`make`/`model`/`yearFrom-yearTo`), variant labels, `Order.status` values, `Shipment.status` values.
 
 Example part numbers used throughout: `OEM-4521-BP` (brake pads), `OEM-7731-AF` (air filter), `OEM-2290-CV` (CV joint), `OEM-1150-HB` (headlight bulb kit), `OEM-6602-SA` (shock absorber).
+
+Phase 2 mockups additionally cross-reference the actual seed catalog in
+`backend/src/database/seeders/run-seed.ts` where a mockup claims to show "real" data end-to-end:
+Bosch **Front Brake Pad Set** (`BP-4521` / OEM `OEM-77123`, ₹1,299, fits Maruti Suzuki Swift
+2018–2024), Generic **Front Shock Absorber** (`SA-9981` / OEM `OEM-55210`, ₹2,499, fits Hyundai i20
+2015–2022), MRF **Engine Oil Filter** (`OF-1123` / OEM `OEM-33019`, ₹349, fits Tata Nexon
+2017–2024). Both naming conventions (brief's illustrative `OEM-####-XX` codes and the seeder's real
+`sku`/`partNumber`/`oemNumber` triplet) are valid placeholder content — use whichever fits the
+mockup's point, but prefer the real seed items on any mockup meant to demonstrate an actual
+frontend↔backend data path.
+
+---
+
+## 10. Elevation & Polish (Phase 2)
+
+Addendum §4: give the app "actual personality within the existing palette — not a rebrand, an
+elevation." Everything below builds on §1–§9 tokens; nothing here replaces them.
+
+### 10.1 Shadow scale — when to use which
+
+The base scale (`shadow-sm` / `shadow-card` / `shadow-md` / `shadow-lg`, §4) covers rest states.
+Phase 2 adds two purpose-built shadows (also in `tailwind.tokens.js`):
+
+| Token | Value | Use |
+|---|---|---|
+| `shadow-nav` | `0 -2px 8px rgba(18,21,33,0.06)` | Fixed mobile bottom nav and any sticky-bottom action bar (PDP add-to-cart, cart checkout bar, checkout step footer) — an *upward* shadow so these read as sitting above content. |
+| `shadow-raised` | `0 8px 24px rgba(18,21,33,0.14)` | Hover-elevated state for cards/popovers that sit over a gradient or colored surface (e.g. a product card hovered inside the hero band), where `shadow-md` reads too faint against a dark background. |
+
+General rule: elevation should track interaction state, not decorate at rest. Flat/rest → `card`.
+Hover/focus-within on interactive surfaces → `md` (or `raised` on colored backgrounds). Overlays
+(modal, drawer, dropdown) → `lg`. Fixed chrome (nav bars) → `nav`.
+
+### 10.2 Gradients on hero/CTA surfaces
+
+Two named gradients (`bg-hero-gradient`, `bg-cta-gradient` in `tailwind.tokens.js`
+`backgroundImage`), built only from existing brand hex values — this is a depth cue, not a new
+color:
+
+- **`hero-gradient`** (`primary-700 → primary-600 → primary-800`, 135°): home hero band, PDP
+  fitment-confidence banner, any full-bleed brand-colored section. Replaces flat `bg-primary-700`.
+- **`cta-gradient`** (`accent-600 → accent-500`, 135°): reserved for *one* high-emphasis CTA per
+  screen (e.g. the hero's "Find parts for my vehicle" button, PDP sticky Add-to-Cart on mobile).
+  Ordinary buttons stay flat `accent-600` per §7 — gradient CTA is a scarce visual signal, not the
+  default button treatment.
+
+Never combine both gradients touching each other (orange-on-blue gradient edges get muddy) —
+separate with white/neutral-50 space.
+
+### 10.3 Micro-interactions
+
+| State | Spec |
+|---|---|
+| Hover (desktop, pointer-fine) | Interactive cards: `shadow-card → shadow-md`, `translateY(-2px)`, 150ms ease-out (already in §7). Buttons: background step per §7 button table, 120ms. |
+| Press/active (mouse or touch) | Scale `0.97`, 100ms ease-in, plus the button's `Active` background from §7. Applies to buttons, tappable cards, bottom-nav tab cells, qty stepper buttons — any primary tap target should visibly compress, not just recolor, so touch feels acknowledged on mobile. |
+| Focus-visible | Existing 2px ring per component (§7) — unchanged, this is an accessibility requirement, not a polish item. |
+| Skeleton loading | Replaces bare spinners for content that has a known shape (product cards, table rows, PDP gallery, order list). See `COMPONENT_LIBRARY.md` `SkeletonLoader`. Shimmer: a `neutral-200 → neutral-100 → neutral-200` gradient sweeping left-to-right, 1.5s linear infinite, `radius` matching the content it stands in for. |
+| Toast enter/exit | Enter: slide-up + fade-in 200ms ease-out from its dock edge (bottom-center mobile / bottom-right desktop). Exit: fade-out 150ms, no slide (avoid drawing extra attention on dismiss). |
+| Badge/count changes (cart badge) | Brief scale pulse (`1 → 1.25 → 1`, 200ms) when the count increments — reinforces "something was added" without a toast on every single add if the design later wants a lighter-weight confirmation. |
+
+### 10.4 Empty-state illustrations
+
+Addendum: replace plain text empty states with simple inline SVG illustrations — lightweight,
+on-brand, not stock-art. House style:
+
+- **Construction**: flat geometric line-art, 2px stroke, single accent detail. Base line color
+  `neutral-300`, one small accent touch in `primary-300` or `accent-300` (never full-saturation
+  brand color — these are low-emphasis, supporting graphics, not attention-grabbing).
+  Viewbox `0 0 120 120`, rendered at 96–120px in the empty state.
+  and `EmptyState` composite (§7/COMPONENT_LIBRARY.md).
+- No literal photography, no stock illustration libraries, no drop shadows on the illustration
+  itself (keep it flat/graphic, consistent with the icon language in §6).
+- Four named variants ship in this phase (spec + inline SVG markup in `COMPONENT_LIBRARY.md`):
+  **empty-cart** (outline shopping cart with a small dashed-circle "nothing here" mark),
+  **no-orders** (outline package/box with a clock overlay), **no-search-results** (outline
+  magnifier with a small "x"), **no-wishlist-items** (outline heart, unfilled/dashed).
+- Copy pattern: bold `text-lg` title ("Your cart is empty") + `text-sm neutral-500` supporting line
+  + one primary `Button` where a next action exists ("Browse Categories" / "Start Shopping" — never
+  a dead end without a CTA if one is plausible).
+
+### 10.5 Card hierarchy — imagery-first
+
+Product/category cards should lead with imagery, not text density:
+
+- Image area gets no less than 55% of card height (product cards keep the existing 1:1 image per
+  §COMPONENT_LIBRARY `ProductCard`, this just confirms it stays dominant as other polish is added).
+- Badges (stock/discount/new — §10.6) overlay the image directly (bottom-left stock/fitment,
+  top-left discount/new, top-right wishlist heart) rather than living in the text block below, so
+  the image band carries the at-a-glance signal and the text block underneath stays purely
+  identifying (brand, title, part number, price, rating).
+- Rating stars render as an actual 5-star glyph row (§10.7), never a bare "4.2" number alone — the
+  number is a suffix, not the primary signal.
+
+### 10.6 Badges: stock / discount / new
+
+Extends §7 Badge and §8 stock convention with the two new commerce badges Phase 2 needs on cards:
+
+| Badge | Placement | Style |
+|---|---|---|
+| Stock (`In Stock` / `Only N left` / `Out of Stock`) | Image bottom-left overlay | Per §8 — success/warning/danger pill on a semi-opaque white chip if contrast against the photo is a concern, else direct on white product-shot background. |
+| Discount (`−N%` / `Sale`) | Image top-left overlay | `bg-accent-600 text-white`, pill, `text-[10px] font-bold`, e.g. `−13%`. Only shown when `originalPrice > price`; compute the percentage, don't hardcode "Sale". |
+| New | Image top-left overlay (stacks below/beside discount if both apply — discount takes visual priority, New moves to top-right corner in that case) | `bg-primary-700 text-white`, pill, `text-[10px] font-bold uppercase tracking-wide`, "NEW". Applied to products where `createdAt` is within the last 30 days — a data rule for Frontend, not a manual flag. |
+
+### 10.7 Rating stars — visual spec
+
+Render as 5 inline star glyphs, not a numeric-only value:
+
+- Full star: filled `warning-600` (matches the existing ★ color already used informally in
+  mockups). Half star: use a clipped/half-filled glyph for `x.5` averages rather than rounding —
+  correct-fit confidence is the whole brand promise, don't round away precision on the one social
+  proof signal. Empty star: outline only, `neutral-300`.
+- Size: 14px inline with `text-xs` contexts (cards), 16px inline with `text-sm` (PDP header), 20px
+  in the PDP reviews-tab summary.
+- Always paired with the count in parens: `★★★★☆ (128)`. On PDP, also show the numeric average
+  (`4.3 out of 5`) next to the stars for screen readers / precision — the stars alone aren't
+  sufficient for exact comparison.

@@ -189,9 +189,103 @@ Simple `Home / Category / Subcategory / Product Title` trail, `text-sm`, `neutra
 
 ---
 
+## BottomNav *(Phase 2)*
+
+**Purpose:** primary storefront navigation on mobile (`<768px`). Full spec, decision rationale,
+and which pages replace it: `design/MOBILE_NAV.md`. Not used in admin.
+
+| Prop | Type | Notes |
+|---|---|---|
+| `tabs` | fixed 4: `home \| categories \| cart \| account` | Not configurable per-screen — same 4 tabs everywhere the bar appears. No Search tab (see `MOBILE_NAV.md` §1 for why). |
+| `activeTab` | one of the above, or `none` | `none` when on a transient screen (e.g. search results) reached via the header, not one of the 4 destinations. |
+| `cartCount` | number | Drives the badge on the Cart tab; badge hidden entirely at `0`, shows `9+` above 9. Must read from the same cart-count source as the header's own cart badge so the two never disagree. |
+
+Visual states, sizing, safe-area handling, badge placement: `design/MOBILE_NAV.md` §2–§6.
+Container shadow: `shadow-nav` (see `design-system.md` §10.1). Height token: `space-14` (56px) +
+`env(safe-area-inset-bottom)`.
+
+Reference markup: `design/mockups/home.html`, `cart.html`, `product-detail.html` (shows the
+*replaced* state — sticky add-to-cart bar instead of the nav, per `MOBILE_NAV.md` §7).
+
+---
+
+## SkeletonLoader *(Phase 2)*
+
+**Purpose:** loading placeholder for content with a known shape — replaces bare spinners per
+`design-system.md` §10.3. Used anywhere a list/grid/detail view is fetching: product grids, PDP,
+order history, admin tables (`DataTable`'s existing `loading` prop should render this, not a
+spinner, going forward).
+
+| Prop | Type | Notes |
+|---|---|---|
+| `variant` | `card \| row \| text \| circle \| image` | `card` = ProductCard-shaped block (image + 2 text lines + price line); `row` = DataTable row; `text` = single line, width configurable; `circle` = avatar/icon placeholder; `image` = gallery/hero placeholder, matches target aspect ratio. |
+| `count` | number | how many skeleton instances to repeat (e.g. 8 skeleton `card`s while a product grid loads) |
+| `width` / `height` | optional overrides | falls back to the shape's natural size (e.g. `card` variant matches `ProductCard` dimensions exactly, so swapping skeleton → real card causes no layout shift) |
+
+Visual: `neutral-200 → neutral-100 → neutral-200` gradient sweep, 1.5s linear infinite (see
+`design-system.md` §10.3), `border-radius` matches the shape it stands in for (`radius-md` for
+cards, `radius-sm` for text lines/badges, `radius-full` for `circle`).
+
+---
+
+## EmptyState *(Phase 2 — expands the Phase 1 stub)*
+
+**Purpose:** unified empty/zero-result pattern with an on-brand inline SVG illustration instead of
+plain text (Phase 1 shipped this as icon-only; Phase 2 adds illustrations + named variants). Full
+illustration style guide: `design-system.md` §10.4.
+
+| Prop | Type | Notes |
+|---|---|---|
+| `variant` | `empty-cart \| no-orders \| no-search-results \| no-wishlist-items \| generic` | selects the inline SVG illustration; `generic` falls back to a plain icon glyph for admin empty tables where a custom illustration isn't warranted |
+| `title` | string | bold `text-lg` |
+| `description` | string | `text-sm neutral-500` |
+| `action` | `{label, onClick}` optional | primary `Button`, shown when a next step exists |
+
+Named variants and their illustration motif (see `design-system.md` §10.4 for stroke/color rules —
+all use `neutral-300` line + one small `primary-300`/`accent-300` accent, viewBox `0 0 120 120`):
+
+- **empty-cart** — outline shopping-cart glyph with a small dashed circle beside it. Default copy:
+  "Your cart is empty" / "Looks like you haven't added any parts yet." / action: "Browse
+  Categories".
+- **no-orders** — outline package box with a small clock overlay at the corner. Default copy: "No
+  orders yet" / "Your order history will show up here once you place your first order." / action:
+  "Start Shopping".
+- **no-search-results** — outline magnifier with a small "x" mark. Default copy: "No results for
+  '{query}'" / "Try a different part name, number, or check your spelling." / no forced action
+  (search bar is already visible above it).
+- **no-wishlist-items** — outline heart, dashed/unfilled. Default copy: "Your wishlist is empty" /
+  "Save parts you're considering — they'll show up here." / action: "Browse Categories".
+
+Reference markup (inline SVGs, ready to copy): `design/mockups/cart.html` (empty-cart variant).
+
+---
+
+## Rating stars *(Phase 2 — visual spec for the `rating` value used by `ProductCard` and PDP)*
+
+Not a separate component prop table (it's a rendering rule for the existing `rating` field on
+`ProductCard` and the PDP review summary) — full spec in `design-system.md` §10.7: 5 inline star
+glyphs (full/half/empty), `warning-600` fill, sized 14px (cards) / 16px (PDP header) / 20px (PDP
+review summary), always paired with `(reviewCount)`, numeric average shown alongside on PDP for
+precision.
+
+---
+
+## Stock / discount / new badges *(Phase 2 — extends Badge, §above, for ProductCard overlays)*
+
+Full placement/style rules: `design-system.md` §10.6. Summary:
+
+| Badge | Trigger | Placement on card image |
+|---|---|---|
+| Stock status | always (In Stock / Only N left / Out of Stock) | bottom-left |
+| Discount | `originalPrice > price` | top-left (computed `−N%`, not hardcoded "Sale") |
+| New | `createdAt` within last 30 days | top-left (or top-right if Discount also present) |
+
+---
+
 ## Implementation notes for Frontend
 
 1. Build these as the first Week-2 deliverable (per `docs/PROJECT_PLAN.md`) before any screen-specific code — every mockup in `design/mockups/` is composed from this set.
 2. Keep component APIs framework-idiomatic but preserve the prop names/semantics above so this doc stays the reference across screens.
 3. All interactive components must meet the 44×44px minimum touch target on mobile (see design-system.md §7 Button sizes).
 4. Icons: use Lucide (see design-system.md §6); mockups inline raw SVGs from that set as a dependency-free reference.
+5. Phase 2 additions (`BottomNav`, `SkeletonLoader`, expanded `EmptyState`, badge/rating polish) are additive on top of this set — no Phase 1 component prop or token was renamed/removed, so existing screens keep working while these get layered in incrementally.

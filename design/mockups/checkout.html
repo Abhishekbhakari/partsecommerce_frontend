@@ -18,7 +18,8 @@
     },
     fontFamily: { sans: ['Inter','sans-serif'], mono: ['"JetBrains Mono"','monospace'] },
     borderRadius: { sm:'4px', DEFAULT:'8px', md:'8px', lg:'12px', xl:'16px' },
-    boxShadow: { card: '0 1px 3px rgba(18,21,33,0.08), 0 1px 2px rgba(18,21,33,0.04)', md: '0 4px 12px rgba(18,21,33,0.10)', lg: '0 12px 32px rgba(18,21,33,0.16)' },
+    boxShadow: { card: '0 1px 3px rgba(18,21,33,0.08), 0 1px 2px rgba(18,21,33,0.04)', md: '0 4px 12px rgba(18,21,33,0.10)', lg: '0 12px 32px rgba(18,21,33,0.16)', nav: '0 -2px 8px rgba(18,21,33,0.06)' },
+    backgroundImage: { 'cta-gradient': 'linear-gradient(135deg, #E2600A 0%, #F5730C 100%)' },
   }}}
 </script>
 <style>
@@ -158,9 +159,10 @@
     </div>
   </main>
 
-  <div class="lg:hidden fixed bottom-0 inset-x-0 bg-white border-t border-neutral-200 p-3 flex items-center gap-3 z-40">
+  <!-- Phase 2 — checkout step footer replaces the bottom nav per design/MOBILE_NAV.md §7 -->
+  <div class="lg:hidden fixed bottom-0 inset-x-0 bg-white border-t border-neutral-200 shadow-nav p-3 flex items-center gap-3 z-40" style="padding-bottom:max(12px, env(safe-area-inset-bottom));">
     <div><p class="text-xs text-neutral-400">Total</p><p class="text-price-sm tab-nums font-bold text-neutral-800">₹4,342</p></div>
-    <button class="flex-1 h-12 rounded-md bg-accent-600 text-white font-semibold">Place Order</button>
+    <button class="flex-1 h-12 rounded-md bg-cta-gradient active:scale-[0.97] transition text-white font-semibold shadow-md">Place Order</button>
   </div>
 </body>
 </html>

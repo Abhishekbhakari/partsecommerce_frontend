@@ -13,6 +13,10 @@
  *
  * Do not hand-edit color hex values here without updating design-system.md
  * to match — the two must stay in sync.
+ *
+ * Phase 2 additions (mobile bottom nav + elevation/polish pass) are additive
+ * only — nothing below was renamed or removed, so existing imports keep
+ * working unchanged. See design/MOBILE_NAV.md and design-system.md §10.
  */
 
 module.exports = {
@@ -104,6 +108,8 @@ module.exports = {
     8: '32px',
     10: '40px',
     12: '48px',
+    // Phase 2: bottom tab bar content-row height. See design/MOBILE_NAV.md §6.
+    14: '56px',
     16: '64px',
     20: '80px',
     24: '96px',
@@ -124,6 +130,16 @@ module.exports = {
     card: '0 1px 3px rgba(18,21,33,0.08), 0 1px 2px rgba(18,21,33,0.04)',
     md: '0 4px 12px rgba(18,21,33,0.10)',
     lg: '0 12px 32px rgba(18,21,33,0.16)',
+    // Phase 2 elevation pass additions — see design/design-system.md §10.
+    nav: '0 -2px 8px rgba(18,21,33,0.06)', // upward shadow for the fixed mobile bottom nav / sticky action bars
+    raised: '0 8px 24px rgba(18,21,33,0.14)', // hover-elevated cards, popovers over colored/gradient surfaces
+  },
+
+  // Phase 2: named gradients for hero/CTA surfaces (design/design-system.md §10).
+  // Built from existing color tokens only — no new hex values introduced.
+  backgroundImage: {
+    'hero-gradient': 'linear-gradient(135deg, #123B72 0%, #204A82 60%, #0D2C57 100%)',
+    'cta-gradient': 'linear-gradient(135deg, #E2600A 0%, #F5730C 100%)',
   },
 
   screens: {

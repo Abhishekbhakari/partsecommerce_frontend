@@ -18,7 +18,8 @@
     },
     fontFamily: { sans: ['Inter','sans-serif'], mono: ['"JetBrains Mono"','monospace'] },
     borderRadius: { sm:'4px', DEFAULT:'8px', md:'8px', lg:'12px', xl:'16px' },
-    boxShadow: { card: '0 1px 3px rgba(18,21,33,0.08), 0 1px 2px rgba(18,21,33,0.04)', md: '0 4px 12px rgba(18,21,33,0.10)', lg: '0 12px 32px rgba(18,21,33,0.16)' },
+    boxShadow: { card: '0 1px 3px rgba(18,21,33,0.08), 0 1px 2px rgba(18,21,33,0.04)', md: '0 4px 12px rgba(18,21,33,0.10)', lg: '0 12px 32px rgba(18,21,33,0.16)', nav: '0 -2px 8px rgba(18,21,33,0.06)', raised: '0 8px 24px rgba(18,21,33,0.14)' },
+    backgroundImage: { 'cta-gradient': 'linear-gradient(135deg, #E2600A 0%, #F5730C 100%)' },
   }}}
 </script>
 <style>
@@ -152,21 +153,28 @@
     </div>
   </main>
 
-  <!-- sticky mobile checkout bar -->
-  <div class="lg:hidden fixed bottom-0 inset-x-0 bg-white border-t border-neutral-200 p-3 flex items-center gap-3 z-40">
+  <!-- sticky mobile checkout bar (Phase 2 — replaces the bottom nav on Cart per design/MOBILE_NAV.md §7) -->
+  <div class="lg:hidden fixed bottom-0 inset-x-0 bg-white border-t border-neutral-200 shadow-nav p-3 flex items-center gap-3 z-40" style="padding-bottom:max(12px, env(safe-area-inset-bottom));">
     <div>
       <p class="text-xs text-neutral-400">Total</p>
       <p class="text-price-sm tab-nums font-bold text-neutral-800">₹4,342</p>
     </div>
-    <a href="checkout.html" class="flex-1 h-12 rounded-md bg-accent-600 text-white font-semibold flex items-center justify-center">Proceed to Checkout</a>
+    <a href="checkout.html" class="flex-1 h-12 rounded-md bg-cta-gradient active:scale-[0.97] transition text-white font-semibold flex items-center justify-center shadow-md">Proceed to Checkout</a>
   </div>
 
-  <!-- ============ EMPTY CART STATE (reference, hidden) ============ -->
+  <!-- ============ EMPTY CART STATE (Phase 2 — EmptyState "empty-cart" variant, reference, hidden) ============ -->
+  <!-- design-system.md §10.4 / COMPONENT_LIBRARY.md EmptyState: neutral-300 line art + one small accent touch -->
   <div class="hidden max-w-md mx-auto text-center py-20 px-4">
-    <svg width="64" height="64" class="mx-auto text-neutral-300 mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+    <svg width="112" height="112" class="mx-auto mb-4" viewBox="0 0 120 120" fill="none">
+      <circle cx="60" cy="60" r="52" class="fill-neutral-50"/>
+      <path d="M28 34h10l7 40a6 6 0 0 0 6 5h30a6 6 0 0 0 6-5l6-28H43" stroke="#C7CDD6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <circle cx="52" cy="90" r="4" stroke="#C7CDD6" stroke-width="3" fill="white"/>
+      <circle cx="82" cy="90" r="4" stroke="#C7CDD6" stroke-width="3" fill="white"/>
+      <circle cx="90" cy="30" r="10" stroke="#FFAD73" stroke-width="2.5" stroke-dasharray="3 4" fill="none"/>
+    </svg>
     <h2 class="text-lg font-semibold text-neutral-800 mb-1">Your cart is empty</h2>
     <p class="text-sm text-neutral-500 mb-5">Looks like you haven't added any parts yet.</p>
-    <a href="home.html" class="inline-block h-11 px-6 leading-[44px] rounded-md bg-accent-600 text-white font-semibold text-sm">Start Shopping</a>
+    <a href="listing.html" class="inline-block h-11 px-6 leading-[44px] rounded-md bg-accent-600 hover:bg-accent-700 active:scale-[0.97] transition text-white font-semibold text-sm">Browse Categories</a>
   </div>
 </body>
 </html>
