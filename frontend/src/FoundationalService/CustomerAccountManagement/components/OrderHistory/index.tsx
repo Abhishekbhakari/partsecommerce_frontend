@@ -1,11 +1,13 @@
 import { Link } from "react-router-dom";
-import { Package } from "lucide-react";
 import { useOrderHistory } from "./index.hook";
 import { formatMoney, formatDate } from "@/Common/lib/utils";
 import { Badge } from "@/Common/components/ui/badge";
+import { Button } from "@/Common/components/ui/button";
 import { Card, CardContent } from "@/Common/components/ui/card";
 import { Spinner } from "@/Common/components/ui/spinner";
 import { Pagination } from "@/Common/components/ui/pagination";
+import { EmptyState } from "@/Common/components/EmptyState";
+import { NoOrdersIllustration } from "@/Common/components/EmptyState/illustrations";
 
 const STATUS_VARIANT: Record<string, "default" | "success" | "destructive" | "secondary"> = {
   pending: "secondary",
@@ -24,13 +26,16 @@ export default function OrderHistory() {
 
   if (items.length === 0) {
     return (
-      <div className="flex flex-col items-center py-16 text-center">
-        <Package className="h-10 w-10 text-muted-foreground" />
-        <p className="mt-3 font-semibold">No orders yet</p>
-        <Link to="/products" className="mt-1 text-sm font-semibold text-primary hover:underline">
-          Start shopping
-        </Link>
-      </div>
+      <EmptyState
+        illustration={<NoOrdersIllustration />}
+        title="No orders yet"
+        description="Once you place an order, it'll show up here."
+        action={
+          <Link to="/products">
+            <Button>Start Shopping</Button>
+          </Link>
+        }
+      />
     );
   }
 

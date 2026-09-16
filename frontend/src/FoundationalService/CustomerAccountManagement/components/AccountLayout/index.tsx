@@ -1,11 +1,12 @@
 import { NavLink, Outlet } from "react-router-dom";
-import { User, MapPin, Package } from "lucide-react";
+import { User, MapPin, Package, Heart } from "lucide-react";
 import { cn } from "@/Common/lib/utils";
 
 const TABS = [
   { label: "Profile", to: "/account/profile", icon: User },
   { label: "Addresses", to: "/account/addresses", icon: MapPin },
-  { label: "Orders", to: "/account/orders", icon: Package }
+  { label: "Orders", to: "/account/orders", icon: Package },
+  { label: "Wishlist", to: "/account/wishlist", icon: Heart }
 ];
 
 /** Shell for the customer account area — tabbed nav (sidebar on desktop, horizontal scroller on

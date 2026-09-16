@@ -10,7 +10,8 @@ export const adminProductFormSchema = z.object({
   basePrice: z.coerce.number().min(1, "Price must be greater than 0"),
   gstRate: z.coerce.number().min(0).max(28),
   status: z.enum(["draft", "active", "archived"]),
-  description: z.string().optional()
+  description: z.string().optional(),
+  images: z.array(z.string()).optional().default([])
 });
 
 export type AdminProductFormValues = z.infer<typeof adminProductFormSchema>;

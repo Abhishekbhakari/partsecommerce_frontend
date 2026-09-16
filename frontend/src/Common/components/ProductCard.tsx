@@ -38,7 +38,7 @@ export function ProductCard({ product, className }: { product: ProductSummary; c
         {product.reviewCount > 0 && (
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <Star className="h-3.5 w-3.5 fill-accent text-accent" />
-            {product.avgRating.toFixed(1)} ({product.reviewCount})
+            {Number(product.avgRating).toFixed(1)} ({product.reviewCount})
           </div>
         )}
         <div className="mt-auto flex items-center justify-between pt-1">

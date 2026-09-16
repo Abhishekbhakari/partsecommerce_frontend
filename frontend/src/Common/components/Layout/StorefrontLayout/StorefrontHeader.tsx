@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Link, NavLink, useNavigate } from "react-router-dom";
-import { Menu, X, Search, ShoppingCart, User, Wrench } from "lucide-react";
+import { Link, NavLink } from "react-router-dom";
+import { Menu, X, ShoppingCart, User, Wrench } from "lucide-react";
 import { useAppSelector } from "@/Common/hooks/useAppRedux";
 import { useAuth } from "@/Common/hooks/useAuth";
 import { Button } from "@/Common/components/ui/button";
+import { SearchAutocomplete } from "./SearchAutocomplete";
 
 const NAV_LINKS = [
   { label: "Shop All", to: "/products" },
@@ -12,17 +13,19 @@ const NAV_LINKS = [
   { label: "Track Order", to: "/account/orders" }
 ];
 
+/** Mobile hamburger (<768px): secondary links only, per design/MOBILE_NAV.md §5 — primary nav
+ * moved to the bottom tab bar, so this no longer duplicates Home/Categories/Cart/Account. */
+const MOBILE_SECONDARY_LINKS = [
+  { label: "Fitment Finder", to: "/fitment-finder" },
+  { label: "Track Order", to: "/account/orders" },
+  { label: "Wishlist", to: "/account/wishlist" },
+  { label: "Help & Contact", to: "/pages/contact" }
+];
+
 export function StorefrontHeader() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [query, setQuery] = useState("");
-  const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const itemCount = useAppSelector((s) => s.cart.itemCount);
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (query.trim()) navigate(`/search?q=${encodeURIComponent(query.trim())}`);
-  };
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-primary text-primary-foreground">
@@ -40,19 +43,12 @@ export function StorefrontHeader() {
           <span className="text-lg">PartsHub</span>
         </Link>
 
-        <form onSubmit={handleSearch} className="ml-2 hidden flex-1 items-center lg:flex">
-          <div className="relative w-full max-w-xl">
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search by part name, number, or OEM code…"
-              className="h-10 w-full rounded-md border-0 bg-white/95 px-3 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent"
-            />
-            <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" aria-label="Search">
-              <Search className="h-4 w-4" />
-            </button>
-          </div>
-        </form>
+        <div className="ml-2 hidden max-w-xl flex-1 lg:block">
+          <SearchAutocomplete
+            placeholder="Search by part name, number, or OEM code…"
+            inputClassName="h-10 w-full rounded-md border-0 bg-white/95 px-3 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent"
+          />
+        </div>
 
         <nav className="ml-auto hidden items-center gap-5 text-sm font-semibold lg:flex">
           {NAV_LINKS.map((link) => (
@@ -81,24 +77,20 @@ export function StorefrontHeader() {
         </div>
       </div>
 
-      <form onSubmit={handleSearch} className="container pb-3 lg:hidden">
-        <div className="relative">
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search parts, part number, OEM code…"
-            className="h-10 w-full rounded-md border-0 bg-white/95 px-3 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent"
-          />
-          <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" aria-label="Search">
-            <Search className="h-4 w-4" />
-          </button>
-        </div>
-      </form>
+      {/* Always-visible search row on mobile (not double-sticky — scrolls with the page), per
+       * design/MOBILE_NAV.md §5: bottom tab bar replaced the hamburger as primary nav, so search
+       * needs to stay one tap away rather than hidden behind the (now secondary-links-only) menu. */}
+      <div className="container pb-3 lg:hidden">
+        <SearchAutocomplete
+          placeholder="Search part name, number or OEM code…"
+          inputClassName="h-11 w-full rounded-md border-0 bg-white/95 px-3 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent"
+        />
+      </div>
 
       {mobileOpen && (
         <nav className="border-t border-white/10 bg-primary lg:hidden">
           <div className="container flex flex-col gap-1 py-2 text-sm font-semibold">
-            {NAV_LINKS.map((link) => (
+            {MOBILE_SECONDARY_LINKS.map((link) => (
               <NavLink
                 key={link.to}
                 to={link.to}

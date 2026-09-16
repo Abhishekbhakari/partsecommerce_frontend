@@ -2,6 +2,8 @@ import { useSearchResults } from "./index.hook";
 import { ProductCard } from "@/Common/components/ProductCard";
 import { Spinner } from "@/Common/components/ui/spinner";
 import { Pagination } from "@/Common/components/ui/pagination";
+import { EmptyState } from "@/Common/components/EmptyState";
+import { NoSearchResultsIllustration } from "@/Common/components/EmptyState/illustrations";
 
 export default function SearchResults() {
   const { q, items, total, page, pageSize, setPage, loading, error } = useSearchResults();
@@ -23,9 +25,11 @@ export default function SearchResults() {
         {loading ? (
           <Spinner />
         ) : items.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-border py-16 text-center text-sm text-muted-foreground">
-            {error ?? (q ? "No products matched your search." : "Enter a part name, number, or OEM code to search.")}
-          </p>
+          <EmptyState
+            illustration={<NoSearchResultsIllustration />}
+            title={q ? "No products matched your search" : "Search for a part"}
+            description={error ?? (q ? "Try a different keyword, part number, or OEM code." : "Enter a part name, number, or OEM code to search.")}
+          />
         ) : (
           <>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">

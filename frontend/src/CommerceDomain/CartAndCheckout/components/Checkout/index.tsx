@@ -40,7 +40,8 @@ export default function Checkout() {
     goToPayment,
     goToReview,
     placeOrder,
-    placing
+    placing,
+    paymentStatus
   } = useCheckout();
 
   if (loading) return <Spinner />;
@@ -204,12 +205,17 @@ export default function Checkout() {
                 <p className="mt-3 text-sm text-muted-foreground">
                   Paying via <span className="font-semibold capitalize text-foreground">{paymentMethod.toUpperCase()}</span>
                 </p>
+                {paymentStatus === "failed" && (
+                  <p className="mt-2 rounded-md bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive">
+                    Payment didn't go through. Your order is saved — tap "Place Order" to retry payment.
+                  </p>
+                )}
                 <div className="mt-5 flex gap-3">
                   <Button variant="outline" onClick={() => setStep("payment")}>
                     Back
                   </Button>
                   <Button className="flex-1" loading={placing} onClick={placeOrder}>
-                    Place Order
+                    {paymentMethod === "cod" ? "Place Order" : "Pay & Place Order"}
                   </Button>
                 </div>
               </CardContent>

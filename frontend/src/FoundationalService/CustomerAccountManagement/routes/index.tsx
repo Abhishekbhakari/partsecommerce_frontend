@@ -6,6 +6,8 @@ import Profile from "../components/Profile";
 import Addresses from "../components/Addresses";
 import OrderHistory from "../components/OrderHistory";
 import OrderDetail from "../components/OrderDetail";
+import OrderTracking from "../components/OrderTracking";
+import Wishlist from "../components/Wishlist";
 import AdminCustomerList from "../components/AdminCustomerList";
 import AdminCustomerDetail from "../components/AdminCustomerDetail";
 
@@ -25,7 +27,9 @@ export const customerAccountManagementRoutes: RouteObject[] = [
           { path: "profile", element: <Profile /> },
           { path: "addresses", element: <Addresses /> },
           { path: "orders", element: <OrderHistory /> },
-          { path: "orders/:id", element: <OrderDetail /> }
+          { path: "orders/:id", element: <OrderDetail /> },
+          { path: "orders/:id/track", element: <OrderTracking /> },
+          { path: "wishlist", element: <Wishlist /> }
         ]
       }
     ]

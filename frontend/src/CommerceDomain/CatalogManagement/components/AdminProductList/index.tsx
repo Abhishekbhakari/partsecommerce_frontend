@@ -1,4 +1,5 @@
-import { Plus, Search, Pencil, Archive } from "lucide-react";
+import { Plus, Search, Pencil, Archive, Upload } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useAdminProductList } from "./index.hook";
 import { formatMoney } from "@/Common/lib/utils";
 import type { ProductSummary } from "@/Common/types/entities";
@@ -52,9 +53,16 @@ export default function AdminProductList() {
           <h1 className="text-xl font-extrabold">Products</h1>
           <p className="text-sm text-muted-foreground">{total} products across the catalog</p>
         </div>
-        <Button onClick={goToCreate}>
-          <Plus className="h-4 w-4" /> New Product
-        </Button>
+        <div className="flex gap-2">
+          <Link to="/admin/products/import">
+            <Button variant="outline">
+              <Upload className="h-4 w-4" /> Bulk Import
+            </Button>
+          </Link>
+          <Button onClick={goToCreate}>
+            <Plus className="h-4 w-4" /> New Product
+          </Button>
+        </div>
       </div>
 
       <div className="relative mt-4 max-w-sm">

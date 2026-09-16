@@ -17,7 +17,8 @@ const emptyForm = {
   basePrice: "",
   gstRate: "18",
   status: "draft" as ProductStatus,
-  description: ""
+  description: "",
+  images: [] as string[]
 };
 
 export function useAdminProductForm() {
@@ -53,7 +54,8 @@ export function useAdminProductForm() {
           basePrice: String(p.basePrice),
           gstRate: String(p.gstRate),
           status: p.status,
-          description: p.description ?? ""
+          description: p.description ?? "",
+          images: p.images ?? []
         });
       })
       .catch(() => toast.error("Couldn't load this product for editing."))

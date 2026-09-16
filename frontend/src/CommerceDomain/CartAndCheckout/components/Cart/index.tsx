@@ -1,11 +1,13 @@
 import { Link } from "react-router-dom";
-import { Minus, Plus, Trash2, ShoppingBag, MapPin, Tag } from "lucide-react";
+import { Minus, Plus, Trash2, MapPin, Tag } from "lucide-react";
 import { useCart } from "./index.hook";
 import { formatMoney } from "@/Common/lib/utils";
 import { Button } from "@/Common/components/ui/button";
 import { Input } from "@/Common/components/ui/input";
 import { Spinner } from "@/Common/components/ui/spinner";
 import { Card, CardContent } from "@/Common/components/ui/card";
+import { EmptyState } from "@/Common/components/EmptyState";
+import { EmptyCartIllustration } from "@/Common/components/EmptyState/illustrations";
 
 export default function Cart() {
   const {
@@ -28,19 +30,23 @@ export default function Cart() {
 
   if (!cart || cart.items.length === 0) {
     return (
-      <div className="container flex flex-col items-center py-20 text-center">
-        <ShoppingBag className="h-14 w-14 text-muted-foreground" />
-        <h1 className="mt-4 text-xl font-extrabold">Your cart is empty</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Browse our catalog to find the parts you need.</p>
-        <Link to="/products">
-          <Button className="mt-5">Shop All Parts</Button>
-        </Link>
+      <div className="container py-6">
+        <EmptyState
+          illustration={<EmptyCartIllustration />}
+          title="Your cart is empty"
+          description="Browse our catalog to find the parts you need."
+          action={
+            <Link to="/products">
+              <Button>Shop All Parts</Button>
+            </Link>
+          }
+        />
       </div>
     );
   }
 
   return (
-    <div className="container py-6">
+    <div className="container py-6 pb-28 md:pb-6">
       <h1 className="text-xl font-extrabold sm:text-2xl">Your Cart ({cart.items.length})</h1>
 
       <div className="mt-5 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px]">
@@ -136,13 +142,28 @@ export default function Cart() {
               </div>
             </div>
 
-            <Link to="/checkout">
+            <Link to="/checkout" className="hidden md:block">
               <Button className="mt-5 w-full" size="lg">
                 Proceed to Checkout
               </Button>
             </Link>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Mobile sticky order-summary/checkout bar — replaces the bottom tab bar on Cart rather
+       * than stacking under it, per design/MOBILE_NAV.md §7. */}
+      <div
+        className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-3 border-t border-border bg-card px-4 py-3 shadow-nav md:hidden"
+        style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}
+      >
+        <div className="min-w-0 flex-1">
+          <p className="text-xs text-muted-foreground">Total</p>
+          <p className="text-lg font-extrabold">{formatMoney(cart.total)}</p>
+        </div>
+        <Link to="/checkout">
+          <Button size="lg">Proceed to Checkout</Button>
+        </Link>
       </div>
     </div>
   );

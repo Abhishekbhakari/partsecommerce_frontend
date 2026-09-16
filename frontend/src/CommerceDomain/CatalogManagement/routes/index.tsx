@@ -6,6 +6,7 @@ import SearchResults from "../components/SearchResults";
 import FitmentFinderPage from "../pages/FitmentFinderPage";
 import AdminProductList from "../components/AdminProductList";
 import AdminProductForm from "../components/AdminProductForm";
+import BulkImportProducts from "../components/BulkImportProducts";
 
 /** Storefront routes — nested under StorefrontLayout in App.tsx. */
 export const catalogManagementRoutes: RouteObject[] = [
@@ -19,6 +20,7 @@ export const catalogManagementRoutes: RouteObject[] = [
 /** Admin routes — nested under AdminLayout in App.tsx (RequireAdminAuth-guarded). */
 export const catalogManagementAdminRoutes: RouteObject[] = [
   { path: "products", element: <AdminProductList /> },
+  { path: "products/import", element: <BulkImportProducts /> },
   { path: "products/new", element: <AdminProductForm /> },
   { path: "products/:slug/edit", element: <AdminProductForm /> }
 ];

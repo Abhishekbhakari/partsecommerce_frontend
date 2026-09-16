@@ -27,6 +27,16 @@ export interface SearchResponse {
   total: number;
 }
 
+/** `POST /admin/products/import` response shape, per
+ * backend/.../CatalogManagement/api/products/bulkImportExport.controller.ts. */
+export interface BulkImportResult {
+  jobId: string;
+  status: string;
+  created: number;
+  updated: number;
+  errors: { row: number; message: string }[];
+}
+
 export interface FitmentOptionsResponse {
   makes: string[];
   models: string[];

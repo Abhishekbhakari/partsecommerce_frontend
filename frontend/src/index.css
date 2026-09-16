@@ -9,9 +9,25 @@
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
+    /* Mobile bottom-nav rendered height, per design/MOBILE_NAV.md §8 — content row + iOS safe area.
+     * Pages that keep the bar pad their scroll container by this instead of a hardcoded pb-14. */
+    --bottom-nav-h: calc(56px + env(safe-area-inset-bottom));
   }
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "cv11", "salt";
+  }
+}
+
+@layer utilities {
+  /* Applied to the storefront <main> on mobile when the bottom tab bar is showing (see
+   * StorefrontLayout) so content never sits behind the fixed bar. */
+  .pb-bottom-nav {
+    padding-bottom: var(--bottom-nav-h);
+  }
+  @screen md {
+    .pb-bottom-nav {
+      padding-bottom: 0;
+    }
   }
 }

@@ -10,6 +10,7 @@ import { useAppDispatch } from "@/Common/hooks/useAppRedux";
 import { cartCleared } from "@/redux/cartSlice";
 import { getErrorMessage } from "@/Common/types/api";
 import { guestAddressSchema, guestEmailSchema } from "../../validators/Checkout";
+import { loadRazorpayScript } from "@/Common/lib/razorpay";
 
 export type CheckoutStep = "address" | "payment" | "review";
 
@@ -32,6 +33,10 @@ export function useCheckout() {
 
   const [paymentMethod, setPaymentMethod] = useState<"upi" | "card" | "netbanking" | "cod">("upi");
   const [placing, setPlacing] = useState(false);
+  /** Set once the order has been created (checkout POST succeeded) so a dismissed/failed Razorpay
+   * modal can be retried without re-creating the order or re-decrementing stock. */
+  const [pendingOrderId, setPendingOrderId] = useState<number | null>(null);
+  const [paymentStatus, setPaymentStatus] = useState<"idle" | "processing" | "failed">("idle");
 
   useEffect(() => {
     cartService
@@ -78,20 +83,90 @@ export function useCheckout() {
 
   const goToReview = () => setStep("review");
 
+  const finishSuccess = (orderId: number) => {
+    dispatch(cartCleared());
+    toast.success("Order placed!");
+    navigate(`/order-confirmation/${orderId}`);
+  };
+
+  /** Opens Razorpay Checkout.js for the already-created order, per docs/PHASE2_ADDENDUM.md §5:
+   * create-intent → open modal → verify on success → confirmation page. A dismissed/failed modal
+   * leaves the order in `pending` (unpaid) and lets the customer retry without re-checkout. */
+  const payWithRazorpay = async (orderId: number) => {
+    setPaymentStatus("processing");
+    const loaded = await loadRazorpayScript();
+    if (!loaded) {
+      toast.error("Couldn't load the payment gateway. Check your connection and try again.");
+      setPaymentStatus("failed");
+      setPlacing(false);
+      return;
+    }
+    try {
+      const intent = await checkoutService.createPaymentIntent(orderId, paymentMethod);
+      const { gatewayOrderId, amount, currency, key } = intent.data;
+      const razorpay = new window.Razorpay({
+        key,
+        amount,
+        currency,
+        name: "PartsHub",
+        description: "Spare parts order payment",
+        order_id: gatewayOrderId,
+        prefill: {
+          email: isAuthenticated ? undefined : guestEmail,
+          contact: isAuthenticated ? undefined : guestAddress.phone
+        },
+        theme: { color: "#123B72" },
+        handler: async (response) => {
+          try {
+            await checkoutService.verifyPayment(response.razorpay_order_id, response.razorpay_payment_id, response.razorpay_signature);
+            finishSuccess(orderId);
+          } catch (err) {
+            toast.error(getErrorMessage(err, "Payment succeeded but verification failed — contact support with your order number."));
+            setPaymentStatus("failed");
+          } finally {
+            setPlacing(false);
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            toast.info("Payment cancelled. Your order is saved — you can retry payment.");
+            setPaymentStatus("idle");
+            setPlacing(false);
+          }
+        }
+      });
+      razorpay.open();
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Couldn't start the payment. Please try again."));
+      setPaymentStatus("failed");
+      setPlacing(false);
+    }
+  };
+
   const placeOrder = async () => {
     setPlacing(true);
     try {
-      const res = await checkoutService.checkout({
-        addressId: isAuthenticated ? selectedAddressId ?? undefined : undefined,
-        address: isAuthenticated ? undefined : guestAddress,
-        guestEmail: isAuthenticated ? undefined : guestEmail
-      });
-      dispatch(cartCleared());
-      toast.success("Order placed!");
-      navigate(`/order-confirmation/${res.data.orderId}`);
+      let orderId = pendingOrderId;
+      if (!orderId) {
+        const res = await checkoutService.checkout({
+          addressId: isAuthenticated ? selectedAddressId ?? undefined : undefined,
+          address: isAuthenticated ? undefined : guestAddress,
+          guestEmail: isAuthenticated ? undefined : guestEmail
+        });
+        orderId = res.data.orderId;
+        setPendingOrderId(orderId);
+      }
+
+      if (paymentMethod === "cod") {
+        await checkoutService.createPaymentIntent(orderId, "cod");
+        finishSuccess(orderId);
+        setPlacing(false);
+        return;
+      }
+
+      await payWithRazorpay(orderId);
     } catch (err) {
       toast.error(getErrorMessage(err, "Couldn't place your order — please try again."));
-    } finally {
       setPlacing(false);
     }
   };
@@ -115,6 +190,7 @@ export function useCheckout() {
     goToPayment,
     goToReview,
     placeOrder,
-    placing
+    placing,
+    paymentStatus
   };
 }

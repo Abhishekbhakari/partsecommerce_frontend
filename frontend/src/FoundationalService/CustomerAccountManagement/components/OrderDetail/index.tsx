@@ -1,4 +1,5 @@
-import { Download, XCircle } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Download, XCircle, Truck } from "lucide-react";
 import { useOrderDetail } from "./index.hook";
 import { formatMoney, formatDate } from "@/Common/lib/utils";
 import { Badge } from "@/Common/components/ui/badge";
@@ -6,6 +7,8 @@ import { Card, CardContent } from "@/Common/components/ui/card";
 import { Button } from "@/Common/components/ui/button";
 import { Spinner } from "@/Common/components/ui/spinner";
 import { Breadcrumb } from "@/Common/components/ui/breadcrumb";
+
+const TRACKABLE_STATUSES = ["confirmed", "packed", "shipped", "delivered"];
 
 const CANCELLABLE_STATUSES = ["pending", "confirmed"];
 
@@ -84,6 +87,13 @@ export default function OrderDetail() {
           </Card>
 
           <div className="flex flex-col gap-2">
+            {TRACKABLE_STATUSES.includes(order.status) && (
+              <Link to={`/account/orders/${order.id}/track`}>
+                <Button variant="outline" className="w-full">
+                  <Truck className="h-4 w-4" /> Track Order
+                </Button>
+              </Link>
+            )}
             <a href={invoiceUrl} target="_blank" rel="noreferrer">
               <Button variant="outline" className="w-full">
                 <Download className="h-4 w-4" /> Download Invoice

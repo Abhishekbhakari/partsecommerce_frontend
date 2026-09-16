@@ -6,6 +6,7 @@ import { Label } from "@/Common/components/ui/label";
 import { Button } from "@/Common/components/ui/button";
 import { Spinner } from "@/Common/components/ui/spinner";
 import { Card, CardContent } from "@/Common/components/ui/card";
+import { ImageUploader } from "@/Common/components/ImageUploader";
 
 export default function AdminProductForm() {
   const { form, setField, errors, categories, brands, loading, saving, isEdit, handleSubmit } = useAdminProductForm();
@@ -94,6 +95,11 @@ export default function AdminProductForm() {
             <div>
               <Label>Description</Label>
               <Textarea value={form.description} onChange={(e) => setField("description", e.target.value)} rows={5} />
+            </div>
+
+            <div>
+              <Label>Product Images</Label>
+              <ImageUploader images={form.images} onChange={(images) => setField("images", images)} maxImages={8} showPrimary />
             </div>
 
             <div className="flex justify-end gap-3 pt-2">

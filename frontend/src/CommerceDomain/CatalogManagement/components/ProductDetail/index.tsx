@@ -37,7 +37,7 @@ export default function ProductDetail() {
   const inStock = (selectedVariant?.stock ?? 0) > 0;
 
   return (
-    <div className="container py-6">
+    <div className="container py-6 pb-24 md:pb-6">
       <Breadcrumb items={[{ label: "Shop All", to: "/products" }, { label: product.title }]} />
 
       <div className="mt-4 grid grid-cols-1 gap-8 lg:grid-cols-2">
@@ -75,7 +75,7 @@ export default function ProductDetail() {
             {product.reviewCount > 0 && (
               <span className="flex items-center gap-1">
                 <Star className="h-4 w-4 fill-accent text-accent" />
-                {product.avgRating.toFixed(1)} ({product.reviewCount} reviews)
+                {Number(product.avgRating).toFixed(1)} ({product.reviewCount} reviews)
               </span>
             )}
             {product.partNumber && <span>Part# {product.partNumber}</span>}
@@ -187,10 +187,26 @@ export default function ProductDetail() {
           )}
           {activeTab === "reviews" && (
             <p className="text-sm text-muted-foreground">
-              {product.reviewCount > 0 ? `${product.reviewCount} reviews · avg ${product.avgRating.toFixed(1)}★` : "No reviews yet."}
+              {product.reviewCount > 0 ? `${product.reviewCount} reviews · avg ${Number(product.avgRating).toFixed(1)}★` : "No reviews yet."}
             </p>
           )}
         </div>
+      </div>
+
+      {/* Mobile sticky add-to-cart bar — replaces the bottom tab bar on PDP rather than stacking
+       * under it, per design/MOBILE_NAV.md §7 (PDP's one job is converting). */}
+      <div
+        className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-3 border-t border-border bg-card px-4 py-3 shadow-nav md:hidden"
+        style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}
+      >
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-xs text-muted-foreground">{product.title}</p>
+          <p className="text-lg font-extrabold">{formatMoney(price)}</p>
+        </div>
+        <Button size="lg" disabled={!inStock} loading={addingToCart} onClick={handleAddToCart}>
+          <ShoppingCart className="h-4 w-4" />
+          {inStock ? "Add to Cart" : "Out of Stock"}
+        </Button>
       </div>
     </div>
   );
