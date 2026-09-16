@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Account — AutoParts Hub</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script>
+  tailwind.config = { theme: { extend: {
+    colors: {
+      primary: {50:'#EFF4FB',100:'#DCE6F5',200:'#B7CCE9',300:'#8DAEDA',400:'#5A87C4',500:'#33619E',600:'#204A82',700:'#123B72',800:'#0D2C57',900:'#081D3B'},
+      accent: {50:'#FFF3EB',100:'#FFE1CC',300:'#FFAD73',500:'#F5730C',600:'#E2600A',700:'#C24E08',800:'#9C3E07'},
+      neutral: {0:'#FFFFFF',50:'#F7F8FA',100:'#EEF0F3',200:'#DFE3E8',300:'#C7CDD6',400:'#9AA3B2',500:'#6B7385',600:'#4C5366',700:'#333A4D',800:'#1F2433',900:'#121521'},
+      success: {50:'#EAF9EF',600:'#1C9A4B',700:'#157A3B'}, warning: {50:'#FFF8E6',600:'#B7791F',700:'#8F5D14'},
+      danger: {50:'#FDECEC',600:'#D5342E',700:'#AE2621'}, info: {50:'#EAF3FC',600:'#1E6FB8'},
+    },
+    fontFamily: { sans: ['Inter','sans-serif'], mono: ['"JetBrains Mono"','monospace'] },
+    borderRadius: { sm:'4px', DEFAULT:'8px', md:'8px', lg:'12px', xl:'16px' },
+    boxShadow: { card: '0 1px 3px rgba(18,21,33,0.08), 0 1px 2px rgba(18,21,33,0.04)', md: '0 4px 12px rgba(18,21,33,0.10)', lg: '0 12px 32px rgba(18,21,33,0.16)' },
+  }}}
+</script>
+<style>
+  body { font-family: 'Inter', sans-serif; background:#F7F8FA; }
+  .tab-nums { font-variant-numeric: tabular-nums; }
+  .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+</style>
+</head>
+<body class="text-neutral-700 antialiased">
+
+  <header class="sticky top-0 z-40 bg-neutral-0 border-b border-neutral-200">
+    <div class="max-w-[1280px] mx-auto px-4 lg:px-6 py-3 flex items-center gap-3">
+      <a href="home.html" class="p-1 -ml-1 text-neutral-600"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></a>
+      <h1 class="font-semibold text-neutral-800">My Account</h1>
+    </div>
+  </header>
+
+  <!-- ============ 1. LOGIN / OTP (reference pattern, shown standalone above account shell) ============ -->
+  <section class="max-w-md mx-auto px-4 pt-8 pb-10 border-b-8 border-neutral-100">
+    <p class="text-xs uppercase tracking-wide text-neutral-400 font-semibold mb-2 text-center">Pattern: Login / OTP entry</p>
+    <div class="bg-white rounded-lg shadow-card border border-neutral-200 p-6">
+      <h2 class="text-xl font-bold text-neutral-800 mb-1">Sign in</h2>
+      <p class="text-sm text-neutral-500 mb-4">Enter your mobile number to receive an OTP.</p>
+      <label class="block text-xs font-medium text-neutral-600 mb-1">Mobile Number</label>
+      <div class="flex mb-4">
+        <span class="h-12 px-3 flex items-center rounded-l-md border border-r-0 border-neutral-300 bg-neutral-100 text-sm text-neutral-500">+91</span>
+        <input type="tel" placeholder="98765 43210" class="flex-1 h-12 px-3 rounded-r-md border border-neutral-300 text-sm focus:border-primary-600 focus:ring-4 focus:ring-primary-100 outline-none">
+      </div>
+      <button class="w-full h-12 rounded-md bg-accent-600 hover:bg-accent-700 text-white font-semibold mb-4">Send OTP</button>
+
+      <!-- OTP boxes state -->
+      <p class="text-xs text-neutral-500 mb-2">Enter the 6-digit code sent to +91 98765 43210</p>
+      <div class="flex gap-2 mb-4">
+        <input maxlength="1" class="w-10 h-12 text-center text-lg font-semibold rounded-md border border-neutral-300 focus:border-primary-600 focus:ring-4 focus:ring-primary-100 outline-none" value="4">
+        <input maxlength="1" class="w-10 h-12 text-center text-lg font-semibold rounded-md border border-neutral-300" value="2">
+        <input maxlength="1" class="w-10 h-12 text-center text-lg font-semibold rounded-md border border-primary-600 ring-4 ring-primary-100">
+        <input maxlength="1" class="w-10 h-12 text-center text-lg font-semibold rounded-md border border-neutral-300">
+        <input maxlength="1" class="w-10 h-12 text-center text-lg font-semibold rounded-md border border-neutral-300">
+        <input maxlength="1" class="w-10 h-12 text-center text-lg font-semibold rounded-md border border-neutral-300">
+      </div>
+      <div class="relative flex items-center py-2"><div class="flex-1 h-px bg-neutral-200"></div><span class="px-3 text-xs text-neutral-400">or continue with</span><div class="flex-1 h-px bg-neutral-200"></div></div>
+      <div class="grid grid-cols-2 gap-2 mt-2">
+        <button class="h-11 rounded-md border border-neutral-300 text-sm font-medium flex items-center justify-center gap-2">Google</button>
+        <button class="h-11 rounded-md border border-neutral-300 text-sm font-medium flex items-center justify-center gap-2">Email</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ACCOUNT SHELL ============ -->
+  <div class="max-w-[1280px] mx-auto px-4 lg:px-6 py-6 flex gap-6">
+
+    <!-- desktop sidebar nav -->
+    <aside class="hidden lg:block w-56 shrink-0">
+      <div class="bg-white rounded-lg shadow-card border border-neutral-200 p-3 sticky top-20">
+        <div class="flex items-center gap-2 px-2 py-2 mb-2 border-b border-neutral-100">
+          <div class="h-9 w-9 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center font-semibold text-sm">RK</div>
+          <div><p class="text-sm font-medium text-neutral-800">Rahul Kumar</p><p class="text-xs text-neutral-500">+91 98765 43210</p></div>
+        </div>
+        <nav class="text-sm space-y-0.5">
+          <a href="#profile" class="flex items-center gap-2 px-2 py-2 rounded-md bg-primary-50 text-primary-700 font-medium"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile</a>
+          <a href="#orders" class="flex items-center gap-2 px-2 py-2 rounded-md text-neutral-600 hover:bg-neutral-50"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>Orders</a>
+          <a href="#addresses" class="flex items-center gap-2 px-2 py-2 rounded-md text-neutral-600 hover:bg-neutral-50"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Address Book</a>
+          <a href="#wishlist" class="flex items-center gap-2 px-2 py-2 rounded-md text-neutral-600 hover:bg-neutral-50"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/></svg>Wishlist</a>
+          <a href="#" class="flex items-center gap-2 px-2 py-2 rounded-md text-neutral-600 hover:bg-neutral-50"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4.5 8-11V5l-8-3-8 3v6c0 6.5 8 11 8 11z"/></svg>Notifications</a>
+          <a href="#" class="flex items-center gap-2 px-2 py-2 rounded-md text-danger-600 hover:bg-danger-50"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Log out</a>
+        </nav>
+      </div>
+    </aside>
+
+    <!-- mobile tabs -->
+    <div class="lg:hidden flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 mb-4 w-full">
+      <button class="shrink-0 px-3 py-1.5 rounded-full bg-primary-700 text-white text-xs font-medium">Profile</button>
+      <button class="shrink-0 px-3 py-1.5 rounded-full border border-neutral-300 text-xs font-medium">Orders</button>
+      <button class="shrink-0 px-3 py-1.5 rounded-full border border-neutral-300 text-xs font-medium">Addresses</button>
+      <button class="shrink-0 px-3 py-1.5 rounded-full border border-neutral-300 text-xs font-medium">Wishlist</button>
+    </div>
+
+    <div class="flex-1 space-y-6">
+
+      <!-- ============ 2. PROFILE ============ -->
+      <section id="profile" class="bg-white rounded-lg shadow-card border border-neutral-200 p-4 md:p-6">
+        <h2 class="font-semibold text-neutral-800 mb-4">Profile</h2>
+        <div class="grid md:grid-cols-2 gap-4">
+          <div><label class="block text-xs font-medium text-neutral-600 mb-1">Full name</label><input value="Rahul Kumar" class="w-full h-11 px-3 rounded-md border border-neutral-300 text-sm"></div>
+          <div><label class="block text-xs font-medium text-neutral-600 mb-1">Email</label><input value="rahul.kumar@example.com" class="w-full h-11 px-3 rounded-md border border-neutral-300 text-sm"></div>
+          <div><label class="block text-xs font-medium text-neutral-600 mb-1">Phone</label><input value="+91 98765 43210" class="w-full h-11 px-3 rounded-md border border-neutral-300 text-sm" disabled></div>
+        </div>
+        <button class="mt-4 h-10 px-5 rounded-md bg-primary-700 hover:bg-primary-600 text-white text-sm font-medium">Save Changes</button>
+      </section>
+
+      <!-- ============ 3. ORDER HISTORY ============ -->
+      <section id="orders" class="bg-white rounded-lg shadow-card border border-neutral-200 p-4 md:p-6">
+        <h2 class="font-semibold text-neutral-800 mb-4">Order History</h2>
+        <div class="space-y-3">
+          <div class="border border-neutral-200 rounded-md p-3 flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="mono text-xs font-semibold text-neutral-800">#APH-100234</span>
+                <span class="inline-flex items-center gap-1 bg-success-50 text-success-700 text-[10px] font-semibold px-2 py-0.5 rounded-full">Delivered</span>
+              </div>
+              <p class="text-xs text-neutral-500">Placed 3 Sep 2026 · 3 items · Front Brake Pad Set, Engine Air Filter +1</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-sm font-bold tab-nums">₹4,342</span>
+              <button class="h-9 px-3 rounded-md border border-neutral-300 text-xs font-medium">View Details</button>
+            </div>
+          </div>
+          <div class="border border-neutral-200 rounded-md p-3 flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="mono text-xs font-semibold text-neutral-800">#APH-100198</span>
+                <span class="inline-flex items-center gap-1 bg-info-50 text-info-600 text-[10px] font-semibold px-2 py-0.5 rounded-full">Shipped</span>
+              </div>
+              <p class="text-xs text-neutral-500">Placed 28 Aug 2026 · 1 item · Rear Shock Absorber (pair)</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-sm font-bold tab-nums">₹4,598</span>
+              <button class="h-9 px-3 rounded-md border border-neutral-300 text-xs font-medium">Track Order</button>
+            </div>
+          </div>
+          <div class="border border-neutral-200 rounded-md p-3 flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="mono text-xs font-semibold text-neutral-800">#APH-100150</span>
+                <span class="inline-flex items-center gap-1 bg-danger-50 text-danger-600 text-[10px] font-semibold px-2 py-0.5 rounded-full">Cancelled</span>
+              </div>
+              <p class="text-xs text-neutral-500">Placed 15 Aug 2026 · 2 items · LED Headlight Bulb Kit ×2</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-sm font-bold tab-nums">₹2,198</span>
+              <button class="h-9 px-3 rounded-md border border-neutral-300 text-xs font-medium">View Details</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ 4. ADDRESS BOOK ============ -->
+      <section id="addresses" class="bg-white rounded-lg shadow-card border border-neutral-200 p-4 md:p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="font-semibold text-neutral-800">Address Book</h2>
+          <button class="h-9 px-3 rounded-md border border-primary-700 text-primary-700 text-xs font-medium flex items-center gap-1"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add New</button>
+        </div>
+        <div class="grid md:grid-cols-2 gap-3">
+          <div class="border border-neutral-200 rounded-md p-3">
+            <p class="text-sm font-medium text-neutral-800 mb-1">Home <span class="text-[10px] bg-primary-100 text-primary-700 px-1.5 py-0.5 rounded-full ml-1">Default</span></p>
+            <p class="text-xs text-neutral-500 mb-2">42, MG Road, Indiranagar, Bengaluru, Karnataka — 560038</p>
+            <div class="flex gap-3 text-xs font-medium"><button class="text-primary-700">Edit</button><button class="text-danger-600">Delete</button></div>
+          </div>
+          <div class="border border-neutral-200 rounded-md p-3">
+            <p class="text-sm font-medium text-neutral-800 mb-1">Work</p>
+            <p class="text-xs text-neutral-500 mb-2">Tower B, Prestige Tech Park, Bengaluru, Karnataka — 560103</p>
+            <div class="flex gap-3 text-xs font-medium"><button class="text-primary-700">Edit</button><button class="text-danger-600">Delete</button></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ 5. WISHLIST ============ -->
+      <section id="wishlist" class="bg-white rounded-lg shadow-card border border-neutral-200 p-4 md:p-6">
+        <h2 class="font-semibold text-neutral-800 mb-4">Wishlist (2)</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <a href="product-detail.html" class="border border-neutral-200 rounded-md p-3">
+            <div class="aspect-square bg-neutral-100 rounded-sm mb-2 flex items-center justify-center"><svg width="32" height="32" class="text-neutral-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/></svg></div>
+            <p class="text-xs font-medium text-neutral-800 line-clamp-2">Rear Brake Disc Rotor</p>
+            <p class="text-sm tab-nums font-bold text-neutral-800 mt-1">₹1,899</p>
+          </a>
+          <a href="product-detail.html" class="border border-neutral-200 rounded-md p-3">
+            <div class="aspect-square bg-neutral-100 rounded-sm mb-2 flex items-center justify-center"><svg width="32" height="32" class="text-neutral-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="5"/></svg></div>
+            <p class="text-xs font-medium text-neutral-800 line-clamp-2">Wheel Hub Bearing</p>
+            <p class="text-sm tab-nums font-bold text-neutral-800 mt-1">₹1,299</p>
+          </a>
+        </div>
+      </section>
+
+      <!-- ============ 6. EMPTY STATE (no search results, reference) ============ -->
+      <section class="bg-white rounded-lg shadow-card border border-neutral-200 p-10 text-center">
+        <p class="text-xs uppercase tracking-wide text-neutral-400 font-semibold mb-4">Pattern: Empty state (reused for empty wishlist / no search results / 404)</p>
+        <svg width="56" height="56" class="mx-auto text-neutral-300 mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <h3 class="font-semibold text-neutral-800 mb-1">No results found</h3>
+        <p class="text-sm text-neutral-500 mb-4">Try a different part number or vehicle.</p>
+        <a href="home.html" class="inline-block h-10 px-5 leading-[40px] rounded-md bg-accent-600 text-white font-semibold text-sm">Back to Home</a>
+      </section>
+    </div>
+  </div>
+</body>
+</html>
