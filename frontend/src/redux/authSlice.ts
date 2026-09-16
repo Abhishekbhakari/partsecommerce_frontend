@@ -26,7 +26,7 @@ const authSlice = createSlice({
     adminLoginSucceeded(state, action: PayloadAction<AdminLoginPayload>) {
       state.token = action.payload.accessToken;
       state.refreshToken = action.payload.refreshToken;
-      state.admin = action.payload.admin;
+      state.admin = action.payload.user;
       state.user = null;
     },
     loggedOut(state) {

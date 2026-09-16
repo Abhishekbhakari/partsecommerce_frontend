@@ -16,5 +16,5 @@ export interface LoginPayload {
 export interface AdminLoginPayload {
   accessToken: string;
   refreshToken: string;
-  admin: AdminUser;
+  user: AdminUser;
 }

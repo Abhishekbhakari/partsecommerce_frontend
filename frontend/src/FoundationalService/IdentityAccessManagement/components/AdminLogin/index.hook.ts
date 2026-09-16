@@ -23,7 +23,7 @@ export function useAdminLogin() {
     try {
       const res = await adminAuthService.login(email, password);
       dispatch(adminLoginSucceeded(res.data));
-      toast.success(`Welcome back, ${res.data.admin.name}`);
+      toast.success(`Welcome back, ${res.data.user.name}`);
       navigate("/admin");
     } catch (err) {
       toast.error(getErrorMessage(err, "Invalid staff credentials."));
