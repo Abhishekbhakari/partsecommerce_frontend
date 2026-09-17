@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seller Login — AutoParts Hub</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script>
+  tailwind.config = { theme: { extend: {
+    colors: {
+      primary: {50:'#EFF4FB',100:'#DCE6F5',200:'#B7CCE9',300:'#8DAEDA',400:'#5A87C4',500:'#33619E',600:'#204A82',700:'#123B72',800:'#0D2C57',900:'#081D3B'},
+      accent: {50:'#FFF3EB',100:'#FFE1CC',300:'#FFAD73',500:'#F5730C',600:'#E2600A',700:'#C24E08',800:'#9C3E07'},
+      neutral: {0:'#FFFFFF',50:'#F7F8FA',100:'#EEF0F3',200:'#DFE3E8',300:'#C7CDD6',400:'#9AA3B2',500:'#6B7385',600:'#4C5366',700:'#333A4D',800:'#1F2433',900:'#121521'},
+      success: {50:'#EAF9EF',600:'#1C9A4B',700:'#157A3B'}, warning: {50:'#FFF8E6',600:'#B7791F',700:'#8F5D14'},
+      danger: {50:'#FDECEC',600:'#D5342E',700:'#AE2621'}, info: {50:'#EAF3FC',600:'#1E6FB8'},
+    },
+    fontFamily: { sans: ['Inter','sans-serif'], mono: ['"JetBrains Mono"','monospace'] },
+    borderRadius: { sm:'4px', DEFAULT:'8px', md:'8px', lg:'12px', xl:'16px' },
+    boxShadow: { card: '0 1px 3px rgba(18,21,33,0.08), 0 1px 2px rgba(18,21,33,0.04)', md: '0 4px 12px rgba(18,21,33,0.10)', lg: '0 12px 32px rgba(18,21,33,0.16)' },
+  }}}
+</script>
+<style>
+  body { font-family: 'Inter', sans-serif; background:#F7F8FA; }
+</style>
+</head>
+<body class="text-neutral-700 antialiased min-h-screen flex flex-col">
+
+  <header class="h-14 bg-neutral-900 flex items-center px-4 lg:px-6 shrink-0">
+    <a href="#" class="flex items-center gap-2 text-white font-bold text-sm">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82"/></svg>
+      AutoParts Hub <span class="text-neutral-400 font-medium">Seller Portal</span>
+    </a>
+  </header>
+
+  <main class="flex-1 flex items-center justify-center px-4 py-10">
+    <div class="w-full max-w-sm">
+      <div class="bg-white rounded-lg shadow-card border border-neutral-200 p-6 lg:p-8">
+        <h1 class="text-xl font-bold text-neutral-800 mb-1">Seller Log In</h1>
+        <p class="text-sm text-neutral-500 mb-6">Access your product, order and payout dashboard.</p>
+
+        <form class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-neutral-700 mb-1">Email</label>
+            <input type="email" placeholder="you@business.com" class="w-full h-11 px-3 rounded-md border border-neutral-300 text-sm focus:border-primary-600 focus:ring-3 focus:ring-primary-100 outline-none">
+          </div>
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="block text-sm font-medium text-neutral-700">Password</label>
+              <a href="#" class="text-xs text-primary-700 font-medium hover:underline">Forgot password?</a>
+            </div>
+            <input type="password" placeholder="Enter your password" class="w-full h-11 px-3 rounded-md border border-neutral-300 text-sm focus:border-primary-600 focus:ring-3 focus:ring-primary-100 outline-none">
+          </div>
+          <label class="flex items-center gap-2 text-sm text-neutral-600">
+            <input type="checkbox" class="rounded border-neutral-300"> Keep me logged in
+          </label>
+          <button type="submit" class="w-full h-11 rounded-md bg-primary-700 hover:bg-primary-600 text-white text-sm font-semibold">Log In</button>
+        </form>
+
+        <!-- example: rejected/suspended/pending error banner state (reference — hidden by default) -->
+        <div class="mt-4 hidden bg-danger-50 border border-danger-600/20 rounded-md p-3 flex items-start gap-2">
+          <svg width="16" height="16" class="text-danger-600 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <p class="text-xs text-danger-600">Login blocked — see seller-pending.html for the full pending/rejected/suspended account screen shown after a login attempt.</p>
+        </div>
+      </div>
+
+      <p class="text-center text-sm text-neutral-500 mt-5">Not registered yet? <a href="seller-register.html" class="text-primary-700 font-medium hover:underline">Apply to become a seller</a></p>
+    </div>
+  </main>
+</body>
+</html>
