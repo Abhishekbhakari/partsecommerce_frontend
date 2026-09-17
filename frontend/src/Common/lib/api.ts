@@ -3,6 +3,12 @@ import axios, { type AxiosResponse } from "axios";
 /** sessionStorage key for the persisted auth session (token + user); mirrored by redux/authSlice. */
 export const AUTH_STORAGE_KEY = "spareparts_auth";
 
+/** Separate sessionStorage key for the seller session (Phase 3) — sellers are a distinct
+ * principal type from customers/admins (see docs/PHASE3_ADDENDUM.md §5), so their token lives
+ * under its own key/redux slice and must never collide with `AUTH_STORAGE_KEY`. Mirrored by
+ * redux/sellerAuthSlice. */
+export const SELLER_AUTH_STORAGE_KEY = "spareparts_seller_auth";
+
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000/api/v1";
 
 const api = axios.create({
@@ -32,6 +38,33 @@ function writeToken(token: string): void {
   }
 }
 
+function readSellerToken(): string | null {
+  try {
+    const stored = sessionStorage.getItem(SELLER_AUTH_STORAGE_KEY);
+    if (!stored) return null;
+    return JSON.parse(stored)?.token ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function writeSellerToken(token: string): void {
+  try {
+    const stored = sessionStorage.getItem(SELLER_AUTH_STORAGE_KEY);
+    const parsed = stored ? JSON.parse(stored) : {};
+    parsed.token = token;
+    sessionStorage.setItem(SELLER_AUTH_STORAGE_KEY, JSON.stringify(parsed));
+  } catch {
+    /* best-effort */
+  }
+}
+
+/** Seller-scoped API calls (`/seller/*`) use the separate seller session/token so a logged-in
+ * admin or customer in the same browser never collides with a logged-in seller. */
+function isSellerRoute(url?: string): boolean {
+  return Boolean(url?.startsWith("/seller/") || url?.includes("/seller/"));
+}
+
 /** Guest cart session id, sent as `X-Cart-Session` per API_CONTRACT.md so an anonymous cart
  * survives across requests until the visitor logs in. */
 const CART_SESSION_KEY = "spareparts_cart_session";
@@ -45,6 +78,11 @@ export function getCartSessionId(): string {
 }
 
 api.interceptors.request.use((config) => {
+  if (isSellerRoute(config.url)) {
+    const sellerToken = readSellerToken();
+    if (sellerToken) config.headers.Authorization = `Bearer ${sellerToken}`;
+    return config;
+  }
   const token = readToken();
   if (token) config.headers.Authorization = `Bearer ${token}`;
   if (!token) config.headers["X-Cart-Session"] = getCartSessionId();
@@ -82,6 +120,8 @@ api.interceptors.response.use(
       originalRequest.url?.includes("/auth/") && !originalRequest.url?.includes("/auth/logout");
     if (isAuthRoute) return Promise.reject(error);
 
+    const sellerRoute = isSellerRoute(originalRequest.url);
+
     if (isRefreshing) {
       return new Promise((resolve, reject) => {
         failedQueue.push({ resolve, reject });
@@ -95,6 +135,21 @@ api.interceptors.response.use(
     isRefreshing = true;
 
     try {
+      if (sellerRoute) {
+        const stored = sessionStorage.getItem(SELLER_AUTH_STORAGE_KEY);
+        const refreshToken = stored ? JSON.parse(stored)?.refreshToken : null;
+        const { data } = await axios.post(
+          `${API_BASE_URL}/seller/auth/refresh`,
+          { refreshToken },
+          { withCredentials: true }
+        );
+        const newToken = data?.data?.accessToken as string;
+        writeSellerToken(newToken);
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        processQueue(null, newToken);
+        return api(originalRequest);
+      }
+
       const stored = sessionStorage.getItem(AUTH_STORAGE_KEY);
       const refreshToken = stored ? JSON.parse(stored)?.refreshToken : null;
       const { data } = await axios.post(
@@ -110,6 +165,11 @@ api.interceptors.response.use(
       return api(originalRequest);
     } catch (refreshError) {
       processQueue(refreshError, null);
+      if (sellerRoute) {
+        sessionStorage.removeItem(SELLER_AUTH_STORAGE_KEY);
+        window.location.href = "/seller/login";
+        return Promise.reject(refreshError);
+      }
       sessionStorage.removeItem(AUTH_STORAGE_KEY);
       if (window.location.pathname.startsWith("/admin")) {
         window.location.href = "/admin/login";

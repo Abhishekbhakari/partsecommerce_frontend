@@ -62,6 +62,11 @@ export interface FitmentCompatibility {
 
 export type ProductStatus = "draft" | "active" | "archived";
 
+export interface ProductSellerSummary {
+  id: number;
+  businessName: string;
+}
+
 export interface ProductSummary {
   id: number;
   sku: string;
@@ -69,6 +74,7 @@ export interface ProductSummary {
   slug: string;
   categoryId: number;
   brandId: number;
+  sellerId?: number;
   partNumber?: string;
   oemNumber?: string;
   basePrice: number;
@@ -79,6 +85,7 @@ export interface ProductSummary {
   reviewCount: number;
   category?: Category;
   brand?: Brand;
+  seller?: ProductSellerSummary;
   inStock?: boolean;
 }
 
@@ -119,6 +126,8 @@ export type OrderStatus =
   | "cancelled"
   | "returned";
 
+export type FulfillmentStatus = "pending" | "picked_up" | "in_transit" | "out_for_delivery" | "delivered" | "failed";
+
 export interface OrderItem {
   id: number;
   orderId: number;
@@ -127,6 +136,11 @@ export interface OrderItem {
   qty: number;
   unitPrice: number;
   gstRateSnapshot: number;
+  sellerId?: number;
+  commissionRate?: number;
+  commissionAmount?: number;
+  sellerEarning?: number;
+  fulfillmentStatus?: FulfillmentStatus;
 }
 
 export interface Order {
@@ -205,4 +219,48 @@ export interface AdminUser {
   role: AdminRole;
   active: boolean;
   lastLoginAt?: string | null;
+}
+
+export type SellerStatus = "pending" | "approved" | "rejected" | "suspended";
+
+export interface PayoutBankDetails {
+  accountHolder?: string;
+  accountNumber?: string;
+  ifsc?: string;
+}
+
+export interface Seller {
+  id: number;
+  businessName: string;
+  email: string;
+  phone?: string | null;
+  gstNumber?: string | null;
+  status: SellerStatus;
+  commissionRateOverride?: number | null;
+  payoutBankDetails?: PayoutBankDetails | null;
+  rejectionReason?: string | null;
+  approvedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SellerPayout {
+  id: number;
+  sellerId: number;
+  periodStart: string;
+  periodEnd: string;
+  grossSales: number;
+  commissionDeducted: number;
+  netPayable: number;
+  status: "pending" | "paid";
+  paidAt?: string | null;
+  createdAt: string;
+}
+
+export interface SellerDashboardStats {
+  salesThisMonth: number;
+  pendingPayoutAmount: number;
+  orderCount: number;
+  lowStockCount: number;
+  recentOrders?: Order[];
 }

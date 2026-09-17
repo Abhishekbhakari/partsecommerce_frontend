@@ -1,4 +1,4 @@
-import { Star, Minus, Plus, ShoppingCart, CheckCircle2 } from "lucide-react";
+import { Star, Minus, Plus, ShoppingCart, CheckCircle2, Store } from "lucide-react";
 import { useProductDetail } from "./index.hook";
 import { formatMoney, cn } from "@/Common/lib/utils";
 import { Button } from "@/Common/components/ui/button";
@@ -81,6 +81,13 @@ export default function ProductDetail() {
             {product.partNumber && <span>Part# {product.partNumber}</span>}
             {product.oemNumber && <span>OEM# {product.oemNumber}</span>}
           </div>
+
+          {product.seller?.businessName && (
+            <a href="#" onClick={(e) => e.preventDefault()} className="mt-2 flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary">
+              <Store className="h-4 w-4" />
+              Sold by <span className="font-semibold text-foreground">{product.seller.businessName}</span>
+            </a>
+          )}
 
           <p className="mt-4 text-3xl font-extrabold">{formatMoney(price)}</p>
           <p className="text-xs text-muted-foreground">Inclusive of {product.gstRate}% GST</p>

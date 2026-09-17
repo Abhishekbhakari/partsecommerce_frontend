@@ -1,47 +1,35 @@
 import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import {
-  LayoutDashboard,
-  Package,
-  ListOrdered,
-  Users,
-  Tag,
-  Image,
-  Star,
-  UserCog,
-  Menu,
-  X,
-  LogOut,
-  Wrench,
-  Store
-} from "lucide-react";
+import { LayoutDashboard, Package, ListOrdered, Wallet, UserCog, Menu, X, LogOut, Store } from "lucide-react";
 import { cn } from "@/Common/lib/utils";
-import { useAuth } from "@/Common/hooks/useAuth";
+import { useSellerAuth } from "@/Common/hooks/useSellerAuth";
+import { sellerAuthService } from "../../service/sellerAuth.service";
 import { Button } from "@/Common/components/ui/button";
 
 const NAV_ITEMS = [
-  { label: "Dashboard", to: "/admin", icon: LayoutDashboard, end: true },
-  { label: "Products", to: "/admin/products", icon: Package },
-  { label: "Orders", to: "/admin/orders", icon: ListOrdered },
-  { label: "Sellers", to: "/admin/sellers", icon: Store },
-  { label: "Customers", to: "/admin/customers", icon: Users },
-  { label: "Categories & Brands", to: "/admin/masters", icon: Tag },
-  { label: "Coupons", to: "/admin/coupons", icon: Tag },
-  { label: "Banners", to: "/admin/banners", icon: Image },
-  { label: "Reviews", to: "/admin/reviews", icon: Star },
-  { label: "Staff & Roles", to: "/admin/staff", icon: UserCog }
+  { label: "Dashboard", to: "/seller/dashboard", icon: LayoutDashboard, end: true },
+  { label: "Products", to: "/seller/products", icon: Package },
+  { label: "Orders", to: "/seller/orders", icon: ListOrdered },
+  { label: "Payouts", to: "/seller/payouts", icon: Wallet },
+  { label: "Profile", to: "/seller/profile", icon: UserCog }
 ];
 
-/** Sidebar shell for /admin/* — separate from StorefrontLayout per docs/CODING_STANDARDS.md
- * ("separate sidebar layout for admin"). Desktop-first but collapses to a drawer under lg. */
-export default function AdminLayout() {
+/** Sidebar shell for /seller/* — copies AdminLayout's markup/structure exactly (same header
+ * height/padding/breakpoints) per design/SELLER_PORTAL_NOTES.md, only the nav items and brand
+ * label change. */
+export default function SellerLayout() {
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const { admin, logout } = useAuth();
+  const { seller, logout } = useSellerAuth();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await sellerAuthService.logout();
+    } catch {
+      /* best-effort — clear the local session regardless */
+    }
     logout();
-    navigate("/admin/login");
+    navigate("/seller/login");
   };
 
   return (
@@ -53,8 +41,8 @@ export default function AdminLayout() {
         )}
       >
         <div className="flex h-16 items-center gap-2 border-b border-white/10 px-5 font-extrabold">
-          <Wrench className="h-5 w-5 text-accent" />
-          PartsHub Admin
+          <Store className="h-5 w-5 text-accent" />
+          Seller Portal
         </div>
         <nav className="flex flex-col gap-0.5 p-3">
           {NAV_ITEMS.map((item) => (
@@ -85,9 +73,7 @@ export default function AdminLayout() {
             {drawerOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
           <div className="ml-auto flex items-center gap-3">
-            <span className="hidden text-sm font-medium text-muted-foreground sm:inline">
-              {admin?.name ?? "Admin"} · <span className="capitalize">{admin?.role?.replace("_", " ")}</span>
-            </span>
+            <span className="hidden text-sm font-medium text-muted-foreground sm:inline">{seller?.businessName ?? "Seller"}</span>
             <Button variant="outline" size="sm" onClick={handleLogout}>
               <LogOut className="h-4 w-4" />
               Logout

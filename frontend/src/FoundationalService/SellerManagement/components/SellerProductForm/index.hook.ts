@@ -1,11 +1,10 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
-import type { Category, Brand, ProductStatus, Seller } from "@/Common/types/entities";
-import { catalogService } from "../../service/catalog.service";
-import { adminProductService } from "../../service/adminProduct.service";
-import { adminSellerService } from "@/FoundationalService/SellerManagement/service/adminSeller.service";
-import { adminProductFormSchema } from "../../validators/AdminProductForm";
+import type { Category, Brand, ProductStatus } from "@/Common/types/entities";
+import { catalogService } from "@/CommerceDomain/CatalogManagement/service/catalog.service";
+import { sellerService } from "../../service/seller.service";
+import { sellerProductFormSchema } from "@/CommerceDomain/CatalogManagement/validators/SellerProductForm";
 import { getErrorMessage } from "@/Common/types/api";
 
 const emptyForm = {
@@ -13,7 +12,6 @@ const emptyForm = {
   sku: "",
   categoryId: "",
   brandId: "",
-  sellerId: "",
   partNumber: "",
   oemNumber: "",
   basePrice: "",
@@ -23,35 +21,32 @@ const emptyForm = {
   images: [] as string[]
 };
 
-export function useAdminProductForm() {
+/** Mirrors AdminProductForm's hook exactly, minus the sellerId field — a seller's own products
+ * are always scoped to their own account server-side, never accepted from the request body
+ * (backend/STATUS.md Phase 3 §3: SellerProductSchema omits sellerId at the Zod layer). Points at
+ * `/seller/products/*` via sellerService instead of adminProductService. */
+export function useSellerProductForm() {
   const navigate = useNavigate();
   const { slug } = useParams();
   const isEdit = Boolean(slug);
 
   const [form, setForm] = useState(emptyForm);
-  // The route param is the product's slug (needed for the public GET /products/:slug lookup),
-  // but PATCH /admin/products/:id takes the numeric id — captured here once the product loads.
   const [productId, setProductId] = useState<number | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
-  const [sellers, setSellers] = useState<Seller[]>([]);
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     catalogService.getCategories().then((res) => setCategories(res.data ?? [])).catch(() => setCategories([]));
     catalogService.getBrands().then((res) => setBrands(res.data ?? [])).catch(() => setBrands([]));
-    adminSellerService
-      .list({ status: "approved", pageSize: 200 })
-      .then((res) => setSellers(res.data.items ?? []))
-      .catch(() => setSellers([]));
   }, []);
 
   useEffect(() => {
     if (!slug) return;
-    adminProductService
-      .getById(slug)
+    sellerService
+      .getProductBySlug(slug)
       .then((res) => {
         const p = res.data;
         setProductId(p.id);
@@ -60,7 +55,6 @@ export function useAdminProductForm() {
           sku: p.sku,
           categoryId: String(p.categoryId),
           brandId: String(p.brandId),
-          sellerId: p.sellerId != null ? String(p.sellerId) : "",
           partNumber: p.partNumber ?? "",
           oemNumber: p.oemNumber ?? "",
           basePrice: String(p.basePrice),
@@ -79,7 +73,7 @@ export function useAdminProductForm() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    const parsed = adminProductFormSchema.safeParse(form);
+    const parsed = sellerProductFormSchema.safeParse(form);
     if (!parsed.success) {
       const fieldErrors: Record<string, string> = {};
       parsed.error.issues.forEach((issue) => {
@@ -94,17 +88,16 @@ export function useAdminProductForm() {
       const payload = {
         ...parsed.data,
         categoryId: Number(parsed.data.categoryId),
-        brandId: Number(parsed.data.brandId),
-        sellerId: Number(parsed.data.sellerId)
+        brandId: Number(parsed.data.brandId)
       };
       if (isEdit && productId != null) {
-        await adminProductService.update(productId, payload as any);
+        await sellerService.updateProduct(productId, payload as any);
         toast.success("Product updated");
       } else {
-        await adminProductService.create(payload as any);
+        await sellerService.createProduct(payload as any);
         toast.success("Product created");
       }
-      navigate("/admin/products");
+      navigate("/seller/products");
     } catch (err) {
       toast.error(getErrorMessage(err, "Couldn't save this product."));
     } finally {
@@ -112,5 +105,5 @@ export function useAdminProductForm() {
     }
   };
 
-  return { form, setField, errors, categories, brands, sellers, loading, saving, isEdit, handleSubmit };
+  return { form, setField, errors, categories, brands, loading, saving, isEdit, handleSubmit };
 }

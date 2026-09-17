@@ -187,3 +187,99 @@ CRUD, wishlist add-to-cart, checkout → order → tracking) rather than just co
   tablet widths have neither the desktop nav row nor the bottom bar as primary nav (pre-existing
   Phase 1 breakpoint choice for the header, not reconciled with the new mobile-nav spec in this
   pass).
+
+## Phase 3 — Multi-vendor marketplace (seller portal, admin seller management, PDP attribution)
+
+Full scope in `docs/PHASE3_ADDENDUM.md` §5. `npx tsc --noEmit` and `npx vite build` are both
+clean. Exercised live end-to-end against the running backend (`localhost:4000`, Postgres Phase 3
+data already migrated) and in-browser: registered a seller through the new UI, approved it through
+the new Admin Sellers UI, logged in as that seller, created a product through the new seller
+product form, confirmed it appeared on the public storefront PDP with the "Sold by" line, placed a
+guest order for it through the existing checkout, confirmed it showed in the seller's Orders page
+with the correct commission/earning split, marked it delivered, generated a payout through the
+admin UI, marked it paid, and confirmed the seller's Payouts page showed the correct pending
+balance (₹0) and payout history row. Also live-verified the pending-review and rejected
+account-status screens (a second test seller, rejected with a reason, got the exact rejection copy
+back on login attempt).
+
+### Newly implemented
+
+- **Seller session** — fully separate from the existing customer/admin session per the addendum's
+  explicit requirement: new `redux/sellerAuthSlice.ts` + own sessionStorage key
+  (`spareparts_seller_auth`, `Common/lib/api.ts`'s `SELLER_AUTH_STORAGE_KEY`), new
+  `Common/hooks/useSellerAuth.ts`. `Common/lib/api.ts`'s request/response interceptors now branch
+  on whether a call targets `/seller/*` — seller calls attach the seller token and refresh via
+  `POST /seller/auth/refresh` (cookie `sellerRefreshToken`) instead of the customer/admin path, and
+  a failed seller refresh redirects to `/seller/login` only, never `/login` or `/admin/login`.
+  Live-verified in one browser tab with both an admin and a seller logged in simultaneously —
+  `sessionStorage` showed both `spareparts_auth` (admin) and `spareparts_seller_auth` (seller)
+  intact at once, no collision.
+- **New route guard** `RequireSellerAuth` (`Common/components/Layout/RequireAuth.tsx`), new
+  `SellerLayout` (`FoundationalService/SellerManagement/components/SellerLayout`) copying
+  `AdminLayout`'s markup/structure exactly per `design/SELLER_PORTAL_NOTES.md`, nav: Dashboard,
+  Products, Orders, Payouts, Profile.
+- **Seller auth pages**: `SellerRegister` (`/seller/register`), `SellerLogin` (`/seller/login`),
+  `SellerStatusScreen` (`/seller/account-status`) — the addendum's single status-driven template
+  (not three screens), rendered when a login attempt fails while the account isn't `approved`. It
+  displays the backend's exact message verbatim and only picks its icon/badge/title by matching
+  keywords ("reject"/"suspend") in that message — it never invents its own reason text.
+- **Seller dashboard** (`SellerDashboard`) — 4 `StatCard`s (sales this month, pending payout,
+  orders, low stock) wired to `GET /seller/dashboard`, recent-orders list.
+- **Seller product management** — `SellerProductForm` (thin sibling of `AdminProductForm`, same
+  field set minus the Seller-picker field, pointed at `/seller/products/*` via the new
+  `seller.service.ts`) and `SellerProductList` (same `DataTable`/`Pagination` pattern as
+  `AdminProductList`, scoped to `GET /seller/products`). Reuses `ImageUploader` as-is. Bulk CSV
+  import for sellers was **not** built this pass (not explicitly in the addendum's frontend task
+  list, unlike the backend endpoint which exists) — flagged below as a follow-up.
+- **Seller order fulfillment** (`SellerOrders`) — order **items** belonging to the seller (not full
+  orders), with a per-item fulfillment-status `<Select>` wired to
+  `PATCH /seller/orders/items/:id/fulfillment`.
+- **Seller payouts** (`SellerPayouts`) — pending-balance `StatCard` + payout history table wired to
+  `GET /seller/payouts`.
+- **Seller profile** (`SellerProfile`) — read-only summary (business name, email, phone, GST,
+  commission override); editable settings (bank details, password change) weren't in the
+  addendum's explicit scope, left as a follow-up.
+- **Admin additions**: new "Sellers" nav item in the existing `AdminLayout` sidebar
+  (`AdminSellerList`) — status-filterable list, Approve/Reject(with reason)/Suspend actions,
+  commission-override modal, payout-generation + mark-paid modal. Added a `success` Button variant
+  (`Common/components/ui/button.tsx`) per `design/SELLER_PORTAL_NOTES.md`'s explicit call-out for
+  the Approve action.
+- **Admin product form** (`AdminProductForm`) — added the required Seller `<Select>` (options from
+  `GET /admin/sellers?status=approved`), required in the Zod schema and included in both
+  create/update payloads. `Product`/`ProductSummary` types gained `sellerId`/`seller`.
+- **Storefront PDP** (`ProductDetail`) — "Sold by {businessName}" line under the rating/SKU row
+  using the new `product.seller` field, per the mockup.
+
+### Contract deviations found live (Phase 3)
+
+- **`GET /seller/payouts` response key is `payouts`, not `items`** — every other list endpoint in
+  this app (`admin/sellers`, `seller/products`, `seller/orders`, etc.) uses `{ items, ... }`; this
+  one returns `{ payouts: [...], pendingBalance }`. Confirmed via a live curl
+  (`{"success":true,"data":{"payouts":[...],"pendingBalance":0}}`). Fixed on the frontend side
+  (`seller.service.ts#listPayouts` types against `payouts`) rather than blocked on a backend
+  rename — flagging here in case Backend wants to align it with the rest of the contract for
+  consistency.
+- **`POST /seller/auth/register` requires `phone`**, contradicting `docs/PHASE3_ADDENDUM.md`'s
+  field list (`phone?`) and `backend/STATUS.md`'s phrasing. Live-verified: registering without
+  `phone` 422s with `{errors:[{field:'phone',message:'Required'}]}`. Fixed on the frontend side —
+  `SellerRegisterForm`'s Zod schema now requires `phone` and the label no longer says "(optional)".
+- **Pre-existing (not Phase 3, found while live-testing the checkout path needed for the seller
+  order-fulfillment test)**: guest checkout's order-confirmation step calls `GET /orders/:id`
+  without an auth token (correct — it's a guest order), but that route requires authentication and
+  returns 401, which trips the axios response interceptor's refresh-and-redirect-to-`/login` logic
+  even for a guest who was never supposed to be signed in. The order itself is still created
+  successfully server-side (verified via admin token lookup) — only the confirmation page's own
+  fetch is affected. Left unfixed (out of Phase 3 scope, pre-existing Phase 1/2 checkout code) but
+  flagged here since it was hit directly while verifying this phase's seller order flow.
+
+### What's stubbed / follow-up
+
+- Seller bulk CSV import UI (backend endpoint `/seller/products/import` exists and is reused by
+  the seller product service pattern conceptually, but no dedicated `SellerBulkImport` screen was
+  built — not explicitly listed in the addendum's frontend task list, unlike the admin one).
+- Seller profile page is read-only — no bank-details or password-change form yet.
+- Payout generation has no client-side guard against overlapping date ranges (matches the backend's
+  own documented limitation in `backend/STATUS.md` Phase 3 — "no anti-double-counting guard"); the
+  admin UI doesn't add one either, it's a straight passthrough to `POST /admin/sellers/:id/payouts`.
+- Visual polish (skeleton loaders, pixel parity with `design/mockups/seller-*.html`) wasn't
+  pixel-diffed against every seller screen — functionally verified live, not a full design-QA pass.

@@ -1,4 +1,4 @@
-import { useAdminProductForm } from "./index.hook";
+import { useSellerProductForm } from "./index.hook";
 import { Input } from "@/Common/components/ui/input";
 import { Textarea } from "@/Common/components/ui/textarea";
 import { Select } from "@/Common/components/ui/select";
@@ -8,8 +8,8 @@ import { Spinner } from "@/Common/components/ui/spinner";
 import { Card, CardContent } from "@/Common/components/ui/card";
 import { ImageUploader } from "@/Common/components/ImageUploader";
 
-export default function AdminProductForm() {
-  const { form, setField, errors, categories, brands, sellers, loading, saving, isEdit, handleSubmit } = useAdminProductForm();
+export default function SellerProductForm() {
+  const { form, setField, errors, categories, brands, loading, saving, isEdit, handleSubmit } = useSellerProductForm();
 
   if (loading) return <Spinner />;
 
@@ -67,17 +67,6 @@ export default function AdminProductForm() {
                 />
                 {errors.brandId && <p className="mt-1 text-xs text-destructive">{errors.brandId}</p>}
               </div>
-            </div>
-
-            <div>
-              <Label>Seller</Label>
-              <Select
-                placeholder="Assign a seller"
-                value={form.sellerId}
-                onChange={(e) => setField("sellerId", e.target.value)}
-                options={sellers.map((s) => ({ label: s.businessName, value: String(s.id) }))}
-              />
-              {errors.sellerId && <p className="mt-1 text-xs text-destructive">{errors.sellerId}</p>}
             </div>
 
             <div className="grid grid-cols-2 gap-4">

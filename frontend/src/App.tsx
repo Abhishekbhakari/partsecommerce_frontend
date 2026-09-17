@@ -18,6 +18,11 @@ import {
   identityAccessManagementAdminRoutes
 } from "@/FoundationalService/IdentityAccessManagement/routes";
 import { masterManagementAdminRoutes } from "@/FoundationalService/MasterManagement/routes";
+import {
+  sellerManagementPublicRoutes,
+  sellerManagementRoutes,
+  sellerManagementAdminRoutes
+} from "@/FoundationalService/SellerManagement/routes";
 
 /**
  * Each module owns its own routes/index.tsx and exports the URL surface it needs — App.tsx only
@@ -37,6 +42,8 @@ const routeConfig: RouteObject[] = [
   },
 
   ...identityAccessManagementPublicRoutes, // /admin/login — public, outside AdminLayout
+  ...sellerManagementPublicRoutes, // /seller/register, /seller/login, /seller/account-status
+  ...sellerManagementRoutes, // /seller/* — its own top-level route tree/layout (RequireSellerAuth)
 
   {
     path: "/admin",
@@ -50,7 +57,8 @@ const routeConfig: RouteObject[] = [
           ...cartAndCheckoutAdminRoutes,
           ...customerAccountManagementAdminRoutes,
           ...masterManagementAdminRoutes,
-          ...identityAccessManagementAdminRoutes
+          ...identityAccessManagementAdminRoutes,
+          ...sellerManagementAdminRoutes
         ]
       }
     ]
