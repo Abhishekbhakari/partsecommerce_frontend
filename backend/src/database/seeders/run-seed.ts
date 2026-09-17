@@ -4,10 +4,26 @@
  */
 import '../../Common/database/config/database';
 import sequelize from '../../Common/database/config/sequelize';
-import { AdminUser, Category, Brand, Product, ProductVariant, FitmentCompatibility } from '../models';
+import { AdminUser, Category, Brand, Product, ProductVariant, FitmentCompatibility, Seller } from '../models';
 import PasswordUtil from '../../Common/utils/PasswordUtil';
 import { slugify } from '../../Common/utils/Slugify';
 import WinstonLogger from '../../Common/logger/WinstonLogger';
+
+async function seedSystemSeller() {
+    const email = 'system-seller@spareparts.local';
+    const existing = await Seller.findOne({ where: { email } });
+    if (existing) return existing;
+
+    const passwordHash = await PasswordUtil.hash('NotALoginPassword!23');
+    return Seller.create({
+        businessName: 'PartsHub Direct',
+        email,
+        passwordHash,
+        phone: '0000000000',
+        status: 'approved',
+        approvedAt: new Date()
+    });
+}
 
 async function seedSuperAdmin() {
     const email = process.env.SUPER_ADMIN_EMAIL || 'admin@spareparts.local';
@@ -41,6 +57,7 @@ async function seedProduct(opts: {
     title: string;
     categoryId: number;
     brandId: number;
+    sellerId: number;
     partNumber: string;
     oemNumber: string;
     basePrice: number;
@@ -56,6 +73,7 @@ async function seedProduct(opts: {
             description: `${opts.title} — genuine-fit replacement spare part.`,
             categoryId: opts.categoryId,
             brandId: opts.brandId,
+            sellerId: opts.sellerId,
             partNumber: opts.partNumber,
             oemNumber: opts.oemNumber,
             basePrice: opts.basePrice,
@@ -94,6 +112,9 @@ async function run() {
     const admin = await seedSuperAdmin();
     WinstonLogger.logger.log({ message: `[seed] Super admin ready: ${admin.email}`, level: 'info' });
 
+    const systemSeller = await seedSystemSeller();
+    WinstonLogger.logger.log({ message: `[seed] System seller ready: ${systemSeller.email}`, level: 'info' });
+
     const brakes = await seedCategory('Brakes');
     const suspension = await seedCategory('Suspension');
     const filters = await seedCategory('Filters & Fluids');
@@ -107,6 +128,7 @@ async function run() {
         title: 'Front Brake Pad Set',
         categoryId: brakes.id,
         brandId: bosch.id,
+        sellerId: systemSeller.id,
         partNumber: 'BP-4521',
         oemNumber: 'OEM-77123',
         basePrice: 129900,
@@ -118,6 +140,7 @@ async function run() {
         title: 'Front Shock Absorber',
         categoryId: suspension.id,
         brandId: generic.id,
+        sellerId: systemSeller.id,
         partNumber: 'SA-9981',
         oemNumber: 'OEM-55210',
         basePrice: 249900,
@@ -129,6 +152,7 @@ async function run() {
         title: 'Engine Oil Filter',
         categoryId: filters.id,
         brandId: mrf.id,
+        sellerId: systemSeller.id,
         partNumber: 'OF-1123',
         oemNumber: 'OEM-33019',
         basePrice: 34900,

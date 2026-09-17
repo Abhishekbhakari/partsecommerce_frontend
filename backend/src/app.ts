@@ -25,7 +25,7 @@ import couponRouter from './FoundationalService/MasterManagement/api/coupons/cou
 import bannerRouter from './FoundationalService/MasterManagement/api/banners/banner.router';
 import uploadRouter from './FoundationalService/MasterManagement/api/uploads/upload.router';
 
-import { productRouter, productAdminRouter } from './CommerceDomain/CatalogManagement/api/products/product.router';
+import { productRouter, productAdminRouter, sellerProductRouter } from './CommerceDomain/CatalogManagement/api/products/product.router';
 import inventoryRouter from './CommerceDomain/CatalogManagement/api/products/inventory.router';
 import { autocompleteRouter, searchRouter } from './CommerceDomain/CatalogManagement/api/search/search.router';
 import fitmentRouter from './CommerceDomain/CatalogManagement/api/fitment/fitment.router';
@@ -42,6 +42,10 @@ import shipmentRouter from './CommerceDomain/ShippingManagement/api/shipments/sh
 import { productReviewRouter, reviewAdminRouter } from './CommerceDomain/ReviewManagement/api/reviews/review.router';
 
 import reportRouter from './CommerceDomain/ReportingAndAnalytics/api/reports/report.router';
+
+import sellerAuthRouter from './FoundationalService/SellerManagement/api/auth/seller-auth.router';
+import sellerPortalRouter from './FoundationalService/SellerManagement/api/portal/seller-portal.router';
+import { sellerAdminRouter, payoutAdminRouter } from './FoundationalService/SellerManagement/api/admin/seller-admin.router';
 
 const app = express();
 const NAMESPACE = '[APPLICATION]:';
@@ -159,6 +163,13 @@ app.use(`${API_BASE}/shipments`, shipmentRouter);
 
 // --- CommerceDomain: ReportingAndAnalytics ---
 app.use(`${API_BASE}/admin/reports`, reportRouter);
+
+// --- FoundationalService: SellerManagement (Phase 3 marketplace) ---
+app.use(`${API_BASE}/seller/auth`, sellerAuthRouter);
+app.use(`${API_BASE}/seller`, sellerPortalRouter);
+app.use(`${API_BASE}/seller/products`, sellerProductRouter);
+app.use(`${API_BASE}/admin/sellers`, sellerAdminRouter);
+app.use(`${API_BASE}/admin/payouts`, payoutAdminRouter);
 
 /* 404 fallback */
 app.use((req, res) => {

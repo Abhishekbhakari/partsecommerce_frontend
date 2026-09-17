@@ -19,6 +19,10 @@ import { Notification } from './Notification';
 import { Wishlist } from './Wishlist';
 import { Banner } from './Banner';
 import { OtpRequest } from './OtpRequest';
+import { Seller } from './Seller';
+import { SellerPayout } from './SellerPayout';
+import { Settings } from './Settings';
+import { ShipmentItem } from './ShipmentItem';
 
 /* ---- User ---- */
 User.hasMany(Address, { foreignKey: 'userId', as: 'addresses' });
@@ -81,6 +85,30 @@ Payment.belongsTo(Order, { foreignKey: 'orderId', as: 'order' });
 Order.hasOne(Shipment, { foreignKey: 'orderId', as: 'shipment' });
 Shipment.belongsTo(Order, { foreignKey: 'orderId', as: 'order' });
 
+// An Order now produces one Shipment per distinct seller — 'shipment' (singular, above) is kept
+// for backward compatibility with existing single-seller callers, 'shipments' is the new,
+// correct accessor for multi-seller orders.
+Order.hasMany(Shipment, { foreignKey: 'orderId', as: 'shipments' });
+
+/* ---- Seller (Phase 3 marketplace) ---- */
+Seller.hasMany(Product, { foreignKey: 'sellerId', as: 'products' });
+Product.belongsTo(Seller, { foreignKey: 'sellerId', as: 'seller' });
+
+Seller.hasMany(OrderItem, { foreignKey: 'sellerId', as: 'orderItems' });
+OrderItem.belongsTo(Seller, { foreignKey: 'sellerId', as: 'seller' });
+
+Seller.hasMany(Shipment, { foreignKey: 'sellerId', as: 'sellerShipments' });
+Shipment.belongsTo(Seller, { foreignKey: 'sellerId', as: 'seller' });
+
+Seller.hasMany(SellerPayout, { foreignKey: 'sellerId', as: 'payouts' });
+SellerPayout.belongsTo(Seller, { foreignKey: 'sellerId', as: 'seller' });
+
+Shipment.hasMany(ShipmentItem, { foreignKey: 'shipmentId', as: 'shipmentItems' });
+ShipmentItem.belongsTo(Shipment, { foreignKey: 'shipmentId', as: 'shipment' });
+
+OrderItem.hasOne(ShipmentItem, { foreignKey: 'orderItemId', as: 'shipmentItem' });
+ShipmentItem.belongsTo(OrderItem, { foreignKey: 'orderItemId', as: 'orderItem' });
+
 Coupon.hasMany(Order, { foreignKey: 'couponId', as: 'orders' });
 Order.belongsTo(Coupon, { foreignKey: 'couponId', as: 'coupon' });
 
@@ -108,5 +136,9 @@ export {
     Notification,
     Wishlist,
     Banner,
-    OtpRequest
+    OtpRequest,
+    Seller,
+    SellerPayout,
+    Settings,
+    ShipmentItem
 };

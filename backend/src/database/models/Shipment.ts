@@ -18,6 +18,7 @@ export interface TrackingEvent {
 export interface ShipmentAttributes {
     id: number;
     orderId: number;
+    sellerId: number;
     carrier: string;
     awbNumber: string | null;
     status: ShipmentStatus;
@@ -38,6 +39,7 @@ export class Shipment
 {
     declare id: number;
     declare orderId: number;
+    declare sellerId: number;
     declare carrier: string;
     declare awbNumber: string | null;
     declare status: ShipmentStatus;
@@ -51,6 +53,7 @@ Shipment.init(
     {
         id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
         orderId: { type: DataTypes.INTEGER, allowNull: false },
+        sellerId: { type: DataTypes.INTEGER, allowNull: false },
         carrier: { type: DataTypes.STRING, allowNull: false, defaultValue: 'Shiprocket' },
         awbNumber: { type: DataTypes.STRING, allowNull: true },
         status: {

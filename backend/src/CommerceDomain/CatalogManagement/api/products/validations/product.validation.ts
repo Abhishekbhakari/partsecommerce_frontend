@@ -26,6 +26,7 @@ export const ProductSchema = z.object({
     description: z.string().nullable().optional(),
     categoryId: z.number().int().positive(),
     brandId: z.number().int().positive(),
+    sellerId: z.number().int().positive('sellerId is required'),
     partNumber: z.string().nullable().optional(),
     oemNumber: z.string().nullable().optional(),
     basePrice: z.number().int().positive('basePrice must be in paise (integer > 0)'),
@@ -37,6 +38,11 @@ export const ProductSchema = z.object({
 });
 
 export const UpdateProductSchema = ProductSchema.partial();
+
+/** Used by the seller product controller — sellerId is never accepted from the request body,
+ *  it is always derived server-side from the authenticated seller (see product.service.ts). */
+export const SellerProductSchema = ProductSchema.omit({ sellerId: true });
+export const UpdateSellerProductSchema = SellerProductSchema.partial();
 
 export const ProductListQuerySchema = z.object({
     category: z.string().optional(),
@@ -56,5 +62,7 @@ export const UpdateInventorySchema = z.object({
 
 export type ProductPayload = z.infer<typeof ProductSchema>;
 export type UpdateProductPayload = z.infer<typeof UpdateProductSchema>;
+export type SellerProductPayload = z.infer<typeof SellerProductSchema>;
+export type UpdateSellerProductPayload = z.infer<typeof UpdateSellerProductSchema>;
 export type ProductListQuery = z.infer<typeof ProductListQuerySchema>;
 export type UpdateInventoryPayload = z.infer<typeof UpdateInventorySchema>;

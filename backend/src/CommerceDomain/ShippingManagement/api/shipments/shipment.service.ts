@@ -30,7 +30,7 @@ class ShipmentService {
         return shipment;
     }
 
-    async track(orderId: number, requester: { userId: number; type: 'customer' | 'admin' } | undefined) {
+    async track(orderId: number, requester: { userId: number; type: 'customer' | 'admin' | 'seller' } | undefined) {
         const shipment = await ShipmentRepository.findByOrderId(orderId);
         if (!shipment) throw new RecordNotFoundException('No shipment found for this order.');
 

@@ -3,6 +3,7 @@
 This is the binding contract between Backend and Frontend. Base path: `/api/v1`. All authenticated routes require `Authorization: Bearer <jwt>` unless noted. Response shapes are brief/illustrative, not exhaustive — see `DATA_MODEL.md` for full entity fields.
 
 **Changelog:** v1 published Week 2 (frozen). Any post-freeze change must be logged here with date + reason.
+- **Phase 3 (2026-09-17):** Multi-vendor marketplace. `POST /admin/products` now requires `sellerId`. `/products` and `/products/:slug` responses gain `seller: { id, businessName }`. New `Seller`/auth section and `Admin — Sellers & Payouts` section added below. See `docs/PHASE3_ADDENDUM.md` for the full design.
 
 ## Auth
 
@@ -22,8 +23,8 @@ This is the binding contract between Backend and Frontend. Base path: `/api/v1`.
 |---|---|---|---|---|---|
 | GET | /categories | List category tree | Public | query: `parentId?` | `Category[]` |
 | GET | /brands | List brands | Public | query: `search?` | `Brand[]` |
-| GET | /products | List/filter/paginate products | Public | query: `category, brand, priceMin, priceMax, sort, page, pageSize, q` | `{ items: Product[], total, page }` |
-| GET | /products/:slug | Product detail incl. variants | Public | — | `Product` (with `variants[]`, `fitment[]`) |
+| GET | /products | List/filter/paginate products | Public | query: `category, brand, priceMin, priceMax, sort, page, pageSize, q` | `{ items: Product[], total, page }` — each item includes `seller: { id, businessName }` |
+| GET | /products/:slug | Product detail incl. variants | Public | — | `Product` (with `variants[]`, `fitment[]`, `seller: { id, businessName }`) |
 | GET | /search/autocomplete | Search-as-you-type suggestions | Public | query: `q` | `{ suggestions: string[], products: ProductSummary[] }` |
 | GET | /search | Full search (part number, OEM, keyword) | Public | query: `q, page, pageSize` | `{ items: Product[], total }` |
 | GET | /fitment/lookup | Fitment finder: parts for make/model/year | Public | query: `make, model, year` | `{ items: Product[], total }` |
@@ -98,7 +99,7 @@ This is the binding contract between Backend and Frontend. Base path: `/api/v1`.
 
 | Method | Path | Purpose | Auth | Request | Response |
 |---|---|---|---|---|---|
-| POST | /admin/products | Create product | Admin | `Product` fields | `Product` |
+| POST | /admin/products | Create product | Admin | `Product` fields **+ required `sellerId`** (Phase 3) | `Product` |
 | PATCH | /admin/products/:id | Update product | Admin | partial `Product` | `Product` |
 | DELETE | /admin/products/:id | Delete/archive product | Admin | — | `{ success }` |
 | PATCH | /admin/products/:id/inventory | Update stock levels | Admin | `{ variantId, stock }` | `{ success }` |
@@ -140,6 +141,45 @@ This is the binding contract between Backend and Frontend. Base path: `/api/v1`.
 | PATCH | /me/notifications/:id/read | Mark as read | User | — | `{ success }` |
 | GET | /orders/:id/invoice | Download GST invoice PDF | User (own) / Admin | — | PDF file stream |
 | POST | /admin/notifications/broadcast | Send bulk email/SMS/WhatsApp (e.g. promo) | Admin | `{ segment, channel, template, params }` | `{ jobId }` |
+
+## Seller (Phase 3 — marketplace)
+
+Sellers are a separate principal type (not a customer, not an admin role). `Authorization: Bearer <sellerJwt>` (`type: 'seller'`) required on all `Seller` rows below; refresh token lives in an httpOnly cookie `sellerRefreshToken` scoped to `/api/v1/seller/auth`.
+
+| Method | Path | Purpose | Auth | Request | Response |
+|---|---|---|---|---|---|
+| POST | /seller/auth/register | Public seller signup (creates `pending`) | Public | `{ businessName, email, password, phone, gstNumber? }` | `{ id, businessName, email, status: 'pending', message }` |
+| POST | /seller/auth/login | Seller login (rejected unless `status === 'approved'`) | Public | `{ email, password }` | `{ accessToken, refreshToken, seller }` |
+| POST | /seller/auth/refresh | Refresh access token | Public (refresh cookie) | — | `{ accessToken }` |
+| POST | /seller/auth/logout | Clear refresh cookie | Public | — | `{ success }` |
+| GET | /seller/auth/me | Current seller profile | Seller | — | `{ id, businessName, email, phone, gstNumber, status, commissionRateOverride, payoutBankDetails, approvedAt }` |
+| GET | /seller/dashboard | Seller's own stats | Seller | — | `{ salesThisMonth, pendingPayoutAmount, orderCount, lowStockCount }` (paise) |
+| GET | /seller/products | List own products (any status) | Seller | query: `q?, page, pageSize` | `{ items: Product[], total, page }` |
+| POST | /seller/products | Create own product (`sellerId` implied, never accepted in body) | Seller | `Product` fields minus `sellerId` | `Product` |
+| PATCH | /seller/products/:id | Update own product (403 if not owner) | Seller | partial `Product` fields minus `sellerId` | `Product` |
+| DELETE | /seller/products/:id | Archive own product | Seller | — | `{ success }` |
+| PATCH | /seller/products/:id/inventory | Update own variant stock | Seller | `{ variantId, stock }` | `{ success }` |
+| POST | /seller/products/import | Bulk CSV import for own catalog (sellerId always the caller, ignored if present in CSV) | Seller | multipart CSV file | `{ jobId, status, created, updated, errors }` |
+| GET | /seller/orders | Order items belonging to this seller across all orders, with parent order's shipping address/contact | Seller | query: `page, pageSize` | `{ items: OrderItem[] (each with nested `order`), total, page }` |
+| PATCH | /seller/orders/items/:orderItemId/fulfillment | Update one order item's fulfillment status; creates/updates the seller's `Shipment` for that order once any item leaves `pending` | Seller | `{ status: 'pending'\|'picked_up'\|'in_transit'\|'out_for_delivery'\|'delivered'\|'failed' }` | updated `OrderItem` |
+| GET | /seller/payouts | Payout history + running pending balance | Seller | — | `{ payouts: SellerPayout[], pendingBalance }` (paise) |
+
+`OrderItem` (Phase 3 fields): `sellerId, commissionRate (%), commissionAmount (paise), sellerEarning (paise), fulfillmentStatus`. Commission is computed and snapshotted at checkout — never recalculated after the order is placed.
+
+## Admin — Sellers & Payouts (Phase 3)
+
+| Method | Path | Purpose | Auth | Request | Response |
+|---|---|---|---|---|---|
+| GET | /admin/sellers | List sellers, filterable by status | Admin (catalog-manager tier) | query: `status?, page, pageSize` | `{ items: Seller[], total, page }` (passwordHash excluded) |
+| GET | /admin/sellers/:id | Seller detail | Admin (catalog-manager tier) | — | `Seller` |
+| PATCH | /admin/sellers/:id/approve | Approve a pending/rejected seller | Admin (owner) | — | `Seller` (`status: 'approved'`) |
+| PATCH | /admin/sellers/:id/reject | Reject with a reason | Admin (owner) | `{ reason }` | `Seller` (`status: 'rejected'`) |
+| PATCH | /admin/sellers/:id/suspend | Suspend an approved seller | Admin (owner) | — | `Seller` (`status: 'suspended'`) |
+| PATCH | /admin/sellers/:id/commission | Set/clear per-seller commission override | Admin (owner) | `{ commissionRateOverride: number \| null }` | `Seller` |
+| POST | /admin/sellers/:id/payouts | Generate a payout for a date range, computed from that seller's `OrderItem.sellerEarning`/`commissionAmount` created in `[periodStart, periodEnd)` | Admin (owner) | `{ periodStart, periodEnd, notes? }` (ISO dates) | `SellerPayout` |
+| PATCH | /admin/payouts/:id/mark-paid | Mark a generated payout as paid (manual bank transfer happens outside the system — no live payment-out integration) | Admin (owner) | — | `SellerPayout` (`status: 'paid'`) |
+
+`SellerPayout`: `{ id, sellerId, periodStart, periodEnd, grossSales, commissionDeducted, netPayable, status: 'pending'|'paid', paidAt, notes }` (all money fields in paise).
 
 ## Conventions
 

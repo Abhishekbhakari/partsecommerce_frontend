@@ -231,3 +231,149 @@ No bugs found in this group — all four behaved correctly against real data on 
   `X-Cart-Session` header value through the login/register/OTP-verify/Google request that it was
   using for the guest cart. After that call succeeds, switch to sending the `Authorization` header
   (logged-in cart) — the old guest session cart will already be empty/deleted.
+
+## Phase 3 — Multi-vendor marketplace (sellers, commission, split fulfillment, payouts)
+
+Full scope in `docs/PHASE3_ADDENDUM.md`. All work below was verified live against the running
+Postgres container (`spareparts-pg`, :5433) with the real Phase 1/2 seed data already in it —
+`npx tsc --noEmit` is clean.
+
+### 1. Migration — highest-risk step, verified live
+
+New migration `backend/src/database/migrations/20260201000000-add-marketplace-sellers.js` (the
+already-applied `20260101000000-create-core-schema.js` was **not** touched). Creates `sellers`,
+`seller_payouts`, `settings` (new generic key-value table — none existed before; seeded
+`platform_commission_rate_percent = 10`), `shipment_items` (maps a `Shipment` to the specific
+`OrderItem`s it covers, `orderItemId` unique). Adds columns via the nullable → backfill → NOT NULL
+sequence within this one migration: `products.sellerId`, `order_items.sellerId` /
+`commissionRate` / `commissionAmount` / `sellerEarning` / `fulfillmentStatus`,
+`shipments.sellerId`.
+
+A system seller (`PartsHub Direct`, `system-seller@spareparts.local`, `status: 'approved'`) is
+seeded in the migration and used to backfill every pre-existing row. Ran `npm run db:migrate`
+against the live container and verified:
+- All 6 pre-existing products backfilled to the system seller (`sellerId = 1`).
+- Pre-existing `order_items` backfilled with `commissionRate = 10.00` and correctly computed
+  `commissionAmount`/`sellerEarning` (spot-checked: qty 7 × unitPrice 34900 → commissionAmount
+  24430, sellerEarning 219870 — sums back to the line total).
+- Both pre-existing `shipments` got a `shipment_items` row per order item in their order.
+- `GET /products` and `GET /admin/orders` both returned 200 with correct data immediately after
+  migrating — no regression to Phase 1/2 reads.
+
+### 2. Seller auth — `FoundationalService/SellerManagement/api/auth`
+
+Mirrors admin auth exactly: separate JWT `type: 'seller'`, separate refresh cookie
+`sellerRefreshToken` scoped to `/api/v1/seller/auth`. Live-verified register → still-pending login
+rejection → admin approve → login succeeds:
+
+```
+POST /api/v1/seller/auth/register {"businessName":"Test Auto Parts Co","email":"testseller1@example.com","password":"SellerPass123!","phone":"9998887777"}
+→ {"success":true,"data":{"id":2,"status":"pending","message":"Your application has been submitted for review..."}}
+
+POST /api/v1/seller/auth/login (same creds, still pending)
+→ {"success":false,"message":"Your seller account is still under review. We will email you once it is approved."}
+
+PATCH /api/v1/admin/sellers/2/approve (admin Bearer)
+→ {"success":true,"data":{"id":2,"status":"approved",...}}
+
+POST /api/v1/seller/auth/login (same creds)
+→ {"success":true,"data":{"accessToken":"...","refreshToken":"...","seller":{"id":2,"businessName":"Test Auto Parts Co","email":"testseller1@example.com","status":"approved"}}}
+```
+
+Rejected/suspended logins get status-specific messages (rejection includes the admin's
+`rejectionReason`).
+
+### 3. Seller self-service — `FoundationalService/SellerManagement/api/portal` + product router additions
+
+- `GET /seller/dashboard`, `GET/POST/PATCH/DELETE /seller/products` (+ `/inventory`, `/import`),
+  `GET /seller/orders`, `PATCH /seller/orders/items/:orderItemId/fulfillment`, `GET /seller/payouts`.
+- Product CRUD reuses `ProductService`'s existing logic — refactored `create`/`update`/`archive`/
+  `updateInventory` into shared private `*Internal` methods that both the admin controller
+  (`sellerId` required in the payload) and the new seller controller (`sellerId` always
+  `req.user.userId`, **never accepted from the request body** — `SellerProductSchema` omits the
+  field entirely at the Zod layer, and `updateInternal` deletes `data.sellerId` even if present)
+  call. Same pattern applied to CSV bulk import (`bulkImportExport.controller.ts`): a seller
+  bearer token forces `sellerId` from auth regardless of any `sellerId` column in the CSV; an
+  admin bearer token requires that column.
+- Live-verified isolation: seller 2 created a product (`POST /seller/products`, no `sellerId` in
+  body) → response correctly has `sellerId: 2`. Seller 3 (a second approved seller) called
+  `GET /seller/products` and got an **empty list** — seller 2's product is invisible to them. The
+  public `GET /products?q=...` correctly includes it with `"seller":{"id":2,"businessName":"Test Auto Parts Co"}`.
+- Fulfillment endpoint: on any status update away from `pending`, creates/updates that seller's
+  `Shipment` row for the order (`sellerId` + `orderId`) and links every one of that seller's
+  `OrderItem`s in the order via `ShipmentItem` (idempotent — `findOrCreate` on the unique
+  `orderItemId`). Also rolls up `Order.status`: `delivered` once every item across **all** sellers
+  in that order is delivered, `shipped` once any item is picked_up/in_transit/out_for_delivery/
+  delivered. Live-verified: marking the sole item on a single-seller order `delivered` moved
+  `Order.status` from `pending` to `delivered` in one call, and created `shipments` row
+  `{orderId, sellerId, status: 'delivered'}` with a matching `shipment_items` row.
+
+### 4. Commission computation at checkout
+
+`Common/utils/CommissionUtil.ts` — `getRateForSeller(sellerId)` returns the seller's
+`commissionRateOverride` if set, else `settings.platform_commission_rate_percent`. Wired into
+`CartAndCheckout/api/checkout/checkout.service.ts`: computed **per line item** (mixed-seller carts
+supported) and snapshotted onto the `OrderItem` at order-creation time — never recalculated later.
+Live-verified: set seller 2's `commissionRateOverride` to 15, checked out 2× a ₹1999 item
+(₹3998.00 line total) → `OrderItem` row: `commissionRate: 15.00, commissionAmount: 59970,
+sellerEarning: 339830` (59970 + 339830 = 399800, exact).
+
+### 5. Admin seller management — `FoundationalService/SellerManagement/api/admin`
+
+`GET/PATCH /admin/sellers*` (list/get = `CATALOG_MANAGER_ROLES`; approve/reject/suspend/commission/
+payout-generation = `requireOwner`, per the addendum's "business-sensitive, lean toward owner"
+guidance), `POST /admin/sellers/:id/payouts`, `PATCH /admin/payouts/:id/mark-paid`. List/get
+responses exclude `passwordHash` (fixed before commit — first pass leaked it, same class of bug as
+the Phase 2 staff-response issue, same fix pattern: `attributes: { exclude: ['passwordHash'] }`).
+
+Payout generation sums `qty*unitPrice` (grossSales), `commissionAmount`, and `sellerEarning`
+(netPayable) from that seller's `OrderItem`s created within `[periodStart, periodEnd)`. Live end-
+to-end: generated a payout for the ₹3998 order above → `{grossSales: 399800, commissionDeducted:
+59970, netPayable: 339830, status: 'pending'}`, then `PATCH .../mark-paid` → `status: 'paid'`,
+`paidAt` set. Seller's `GET /seller/payouts` then correctly showed `pendingBalance: 0`.
+
+### What's stubbed / known limitations
+
+- **Payout generation has no anti-double-counting guard.** There is no `OrderItem.payoutId` or
+  similar link recorded when a payout is generated — an admin who generates two overlapping-date-
+  range payouts for the same seller will double-count those order items in `grossSales`/
+  `netPayable`. `GET /seller/dashboard` and `GET /seller/payouts`'s `pendingBalance` approximate
+  "pending" as `sum(sellerEarning of all order items) - sum(netPayable of all payouts, any
+  status)`, which is only correct if payout ranges never overlap. Documented here rather than
+  silently wrong — if Frontend needs a hard guarantee here, flag it back for a proper
+  `OrderItem.payoutId` migration.
+- **Payout payment-out is manual**, same honesty-of-scope reasoning as the Razorpay/Shiprocket
+  stubs: `mark-paid` just flips a status/timestamp, no real bank transfer integration.
+  `Seller.payoutBankDetails` is stored (self-reported JSONB) but never verified against anything.
+- **Order-level status roll-up is best-effort**, not a full state machine: it only ever moves
+  forward to `shipped`/`delivered` on a fulfillment update; it does not handle partial-cancellation
+  or per-seller-cancel scenarios (out of scope for this phase).
+- The old single-shipment admin endpoints (`POST /shipments`, `GET /shipments/:orderId/track`)
+  were left as-is for backward compatibility (`Order.hasOne(Shipment, as:'shipment')` association
+  kept alongside the new `Order.hasMany(Shipment, as:'shipments')`) — for a multi-seller order
+  these old endpoints only see/create *one* shipment. Use the seller fulfillment endpoint or query
+  `shipments` directly for correct multi-seller behavior.
+
+### Exact field names Frontend needs (avoid a Phase 1/2-style mismatch)
+
+- Seller JWT payload `type` is the string `'seller'` (not `'customer'`/`'admin'`); refresh cookie
+  name is `sellerRefreshToken`, path `/api/v1/seller/auth`.
+- Seller product create/update payloads use the **same field names** as admin `Product` fields
+  (`sku, title, categoryId, brandId, basePrice, gstRate, images, status, variants, fitment`) but
+  **must never include `sellerId`** — it's rejected at the Zod layer on the seller endpoint (schema
+  omits it) but silently ignored (not merely rejected) on update if somehow present.
+  `SellerProductSchema`/`UpdateSellerProductSchema` in
+  `CommerceDomain/CatalogManagement/api/products/validations/product.validation.ts`.
+  Admin's `POST /admin/products` now requires `sellerId` (number) — this is a breaking change to
+  the existing admin product-create form, gains a required Seller dropdown per the addendum.
+  Non-integer/missing `sellerId` on that admin route returns a 422 with `errors: [{field:
+  'sellerId', message: 'Required'}]`.
+- `PATCH /seller/orders/items/:orderItemId/fulfillment` body is `{ status }`, one of the exact
+  strings `pending | picked_up | in_transit | out_for_delivery | delivered | failed` (same enum as
+  `Shipment.status`, reused for `OrderItem.fulfillmentStatus`).
+- All money fields (`salesThisMonth`, `pendingPayoutAmount`, `grossSales`, `commissionDeducted`,
+  `netPayable`, `commissionAmount`, `sellerEarning`) are **paise integers**, same convention as
+  every other money field in the API.
+- `commissionRateOverride` is `null` when unset (falls back to platform default) — `PATCH
+  /admin/sellers/:id/commission` accepts `{ commissionRateOverride: number | null }`, sending
+  `null` clears the override.

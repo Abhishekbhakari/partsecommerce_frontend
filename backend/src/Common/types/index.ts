@@ -2,7 +2,7 @@
 export interface TokenPayload {
     userId: number;
     role: string;
-    type: 'customer' | 'admin';
+    type: 'customer' | 'admin' | 'seller';
     email?: string;
 }
 

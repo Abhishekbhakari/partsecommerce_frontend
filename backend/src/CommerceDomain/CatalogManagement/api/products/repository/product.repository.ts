@@ -4,9 +4,12 @@ import {
     ProductVariant,
     FitmentCompatibility,
     Category,
-    Brand
+    Brand,
+    Seller
 } from '../../../../../Common/database/models';
 import { ProductListQuery } from '../validations/product.validation';
+
+const SELLER_LITE_INCLUDE = { model: Seller, as: 'seller', attributes: ['id', 'businessName'] };
 
 const SORT_MAP: Record<string, Order> = {
     price_asc: [['basePrice', 'ASC']],
@@ -48,7 +51,8 @@ class ProductRepository {
             where: where as WhereOptions,
             include: [
                 { model: Category, as: 'category' },
-                { model: Brand, as: 'brand' }
+                { model: Brand, as: 'brand' },
+                SELLER_LITE_INCLUDE
             ],
             order: query.sort ? SORT_MAP[query.sort] : [['createdAt', 'DESC']],
             offset,
@@ -64,8 +68,32 @@ class ProductRepository {
                 { model: Category, as: 'category' },
                 { model: Brand, as: 'brand' },
                 { model: ProductVariant, as: 'variants' },
-                { model: FitmentCompatibility, as: 'fitment' }
+                { model: FitmentCompatibility, as: 'fitment' },
+                SELLER_LITE_INCLUDE
             ]
+        });
+    }
+
+    /** Seller's own product management view — every status, not just 'active'. */
+    async findAndCountForSeller(sellerId: number, query: ProductListQuery, offset: number, limit: number) {
+        const where: Record<string | symbol, unknown> = { sellerId };
+        if (query.q) {
+            where[Op.or] = [
+                { title: { [Op.iLike]: `%${query.q}%` } },
+                { sku: { [Op.iLike]: `%${query.q}%` } }
+            ];
+        }
+        return Product.findAndCountAll({
+            where: where as WhereOptions,
+            include: [
+                { model: Category, as: 'category' },
+                { model: Brand, as: 'brand' },
+                { model: ProductVariant, as: 'variants' }
+            ],
+            order: [['createdAt', 'DESC']],
+            offset,
+            limit,
+            distinct: true
         });
     }
 

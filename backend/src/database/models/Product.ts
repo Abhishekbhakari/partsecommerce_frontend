@@ -11,6 +11,7 @@ export interface ProductAttributes {
     description: string | null;
     categoryId: number;
     brandId: number;
+    sellerId: number;
     partNumber: string | null;
     oemNumber: string | null;
     basePrice: number;
@@ -48,6 +49,7 @@ export class Product
     declare description: string | null;
     declare categoryId: number;
     declare brandId: number;
+    declare sellerId: number;
     declare partNumber: string | null;
     declare oemNumber: string | null;
     declare basePrice: number;
@@ -69,6 +71,7 @@ Product.init(
         description: { type: DataTypes.TEXT, allowNull: true },
         categoryId: { type: DataTypes.INTEGER, allowNull: false },
         brandId: { type: DataTypes.INTEGER, allowNull: false },
+        sellerId: { type: DataTypes.INTEGER, allowNull: false },
         partNumber: { type: DataTypes.STRING, allowNull: true },
         oemNumber: { type: DataTypes.STRING, allowNull: true },
         basePrice: { type: DataTypes.INTEGER, allowNull: false },
@@ -87,7 +90,13 @@ Product.init(
         tableName: 'products',
         modelName: 'Product',
         timestamps: true,
-        indexes: [{ fields: ['partNumber'] }, { fields: ['oemNumber'] }, { fields: ['categoryId'] }, { fields: ['brandId'] }]
+        indexes: [
+            { fields: ['partNumber'] },
+            { fields: ['oemNumber'] },
+            { fields: ['categoryId'] },
+            { fields: ['brandId'] },
+            { fields: ['sellerId'] }
+        ]
     }
 );
 

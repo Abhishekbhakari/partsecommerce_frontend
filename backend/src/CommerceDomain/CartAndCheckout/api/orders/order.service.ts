@@ -6,7 +6,7 @@ import { CancelOrderPayload, ReturnOrderPayload } from './validations/order.vali
 const CANCELLABLE_STATUSES = ['pending', 'confirmed'];
 
 class OrderService {
-    async getById(id: number, requester: { userId: number; type: 'customer' | 'admin' } | undefined) {
+    async getById(id: number, requester: { userId: number; type: 'customer' | 'admin' | 'seller' } | undefined) {
         const order = await OrderRepository.findById(id);
         if (!order) throw new RecordNotFoundException('Order not found.');
         if (requester?.type === 'customer' && order.userId !== requester.userId) {
@@ -20,7 +20,7 @@ class OrderService {
         return { items: rows, ...buildPagination(count, page, pageSize) };
     }
 
-    async cancel(id: number, requester: { userId: number; type: 'customer' | 'admin' }, _payload: CancelOrderPayload) {
+    async cancel(id: number, requester: { userId: number; type: 'customer' | 'admin' | 'seller' }, _payload: CancelOrderPayload) {
         const order = await this.getById(id, requester);
         if (!CANCELLABLE_STATUSES.includes(order.status)) {
             throw new ValidationException('This order can no longer be cancelled.');
@@ -29,7 +29,7 @@ class OrderService {
         return OrderRepository.findById(id);
     }
 
-    async requestReturn(id: number, requester: { userId: number; type: 'customer' | 'admin' }, payload: ReturnOrderPayload) {
+    async requestReturn(id: number, requester: { userId: number; type: 'customer' | 'admin' | 'seller' }, payload: ReturnOrderPayload) {
         const order = await this.getById(id, requester);
         if (order.status !== 'delivered') {
             throw new ValidationException('Only delivered orders are eligible for return.');

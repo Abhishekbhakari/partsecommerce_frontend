@@ -4,6 +4,7 @@ import CartRepository from '../cart/repository/cart.repository';
 import { BadRequestException, ForbiddenException, ValidationException } from '../../../../Common/httpErrorClasses';
 import { CheckoutPayload } from './validations/checkout.validation';
 import { generateOrderNumber } from '../../../../Common/utils/Slugify';
+import CommissionUtil from '../../../../Common/utils/CommissionUtil';
 
 interface CartItemRow {
     id: number;
@@ -12,7 +13,7 @@ interface CartItemRow {
     variant: {
         id: number;
         stock: number;
-        product: { title: string; gstRate: number };
+        product: { title: string; gstRate: number; sellerId: number };
     };
 }
 
@@ -72,6 +73,28 @@ class CheckoutService {
         const shippingFee = subtotal - discount >= 99900 ? 0 : 4900; // free shipping above INR 999
         const total = subtotal - discount + shippingFee;
 
+        // Commission is computed and snapshotted at checkout time, per seller — a later rate
+        // change (platform default or a seller's override) never rewrites history for orders
+        // already placed (see docs/PHASE3_ADDENDUM.md §1).
+        const orderItems = [];
+        for (const item of items) {
+            const sellerId = item.variant.product.sellerId;
+            const lineTotal = item.qty * item.priceAtAdd;
+            const commissionRate = await CommissionUtil.getRateForSeller(sellerId);
+            const { commissionAmount, sellerEarning } = CommissionUtil.compute(lineTotal, commissionRate);
+            orderItems.push({
+                variantId: item.variant.id,
+                sellerId,
+                productTitleSnapshot: item.variant.product.title,
+                qty: item.qty,
+                unitPrice: item.priceAtAdd,
+                gstRateSnapshot: item.variant.product.gstRate,
+                commissionRate,
+                commissionAmount,
+                sellerEarning
+            });
+        }
+
         const order = await CheckoutRepository.createOrderWithItems(
             {
                 orderNumber: generateOrderNumber(),
@@ -86,13 +109,7 @@ class CheckoutService {
                 total,
                 couponId: coupon?.id || null
             },
-            items.map((item) => ({
-                variantId: item.variant.id,
-                productTitleSnapshot: item.variant.product.title,
-                qty: item.qty,
-                unitPrice: item.priceAtAdd,
-                gstRateSnapshot: item.variant.product.gstRate
-            })),
+            orderItems,
             items.map((item) => ({ variantId: item.variant.id, qty: item.qty }))
         );
 

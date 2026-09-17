@@ -63,6 +63,20 @@ class TokenMiddleware {
         });
     };
 
+    /** Requires an authenticated request where req.user.type === 'seller'. */
+    requireSellerAuth = (req: Request, res: Response, next: NextFunction): void => {
+        this.authMiddleware(req, res, () => {
+            if (req.user?.type !== 'seller') {
+                res.status(403).json({
+                    success: false,
+                    message: 'This endpoint is restricted to seller accounts.'
+                });
+                return;
+            }
+            next();
+        });
+    };
+
     /** Populates req.user when a valid bearer token is present, but never rejects the request. */
     optionalAuthMiddleware(req: Request, _res: Response, next: NextFunction): void {
         const authHeader = req.headers.authorization;

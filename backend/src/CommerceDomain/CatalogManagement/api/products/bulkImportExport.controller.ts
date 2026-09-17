@@ -23,6 +23,11 @@ class BulkImportExportController {
                 throw new BadRequestException('CSV file is required (multipart field name: file).');
             }
 
+            // Seller-authenticated callers always own the rows they import — sellerId is never
+            // read from the CSV in that case. Admin callers (who may import on behalf of any
+            // seller) must supply a `sellerId` column per row.
+            const sellerIdFromAuth = req.user?.type === 'seller' ? req.user.userId : undefined;
+
             const records: Record<string, string>[] = parse(req.file.buffer, {
                 columns: true,
                 skip_empty_lines: true,
@@ -43,11 +48,19 @@ class BulkImportExportController {
                         throw new Error('Unknown categorySlug or brandSlug.');
                     }
 
+                    const sellerId = sellerIdFromAuth ?? Number(row.sellerId);
+                    if (!sellerId) {
+                        throw new Error('sellerId column is required for admin-initiated imports.');
+                    }
+
                     const existing = await ProductRepository.findBySku(row.sku);
                     const basePrice = Number(row.basePrice);
                     const gstRate = row.gstRate ? Number(row.gstRate) : 18;
 
                     if (existing) {
+                        if (sellerIdFromAuth && existing.sellerId !== sellerIdFromAuth) {
+                            throw new Error('You do not own an existing product with this SKU.');
+                        }
                         await ProductRepository.update(existing.id, {
                             title: row.title,
                             categoryId: category.id,
@@ -65,6 +78,7 @@ class BulkImportExportController {
                             slug: slugify(row.title),
                             categoryId: category.id,
                             brandId: brand.id,
+                            sellerId,
                             partNumber: row.partNumber || null,
                             oemNumber: row.oemNumber || null,
                             basePrice,

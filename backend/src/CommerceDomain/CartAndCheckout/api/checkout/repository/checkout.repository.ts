@@ -8,7 +8,17 @@ class CheckoutRepository {
 
     async createOrderWithItems(
         orderData: Record<string, unknown>,
-        items: { variantId: number; productTitleSnapshot: string; qty: number; unitPrice: number; gstRateSnapshot: number }[],
+        items: {
+            variantId: number;
+            sellerId: number;
+            productTitleSnapshot: string;
+            qty: number;
+            unitPrice: number;
+            gstRateSnapshot: number;
+            commissionRate: number;
+            commissionAmount: number;
+            sellerEarning: number;
+        }[],
         stockDecrements: { variantId: number; qty: number }[]
     ) {
         return sequelize.transaction(async (t: Transaction) => {

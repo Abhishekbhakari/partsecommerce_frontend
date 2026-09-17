@@ -5,7 +5,7 @@ declare global {
             user?: {
                 userId: number;
                 role: string;
-                type: 'customer' | 'admin';
+                type: 'customer' | 'admin' | 'seller';
                 email?: string;
             };
             /** Guest cart session id, resolved from `X-Cart-Session` header or cookie. */
