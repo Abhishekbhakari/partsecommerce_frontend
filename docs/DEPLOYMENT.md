@@ -44,8 +44,17 @@ against external bandwidth) → set it as a single env var on the **backend web 
 Everything else in `backend/.env.example` (Razorpay/Shiprocket/Google/OTP keys) can stay unset for
 now — those features are still stubbed, per `backend/STATUS.md`.
 
-**Build command:** `npm install && npm run build && npm run db:migrate`
+**Build command:** `npm install --include=dev && npm run build && npm run db:migrate`
 **Start command:** `npm start`
+
+The `--include=dev` matters: Render sets `NODE_ENV=production` automatically for the build step,
+and npm's default under that is to skip `devDependencies` — which is where `typescript` and every
+`@types/*` package live. Without it, `npm run build` fails with a wall of
+`TS7016: Could not find a declaration file for module 'express'` (and similar) errors, `dist/`
+never gets created, and `npm start` has nothing to run — this was the actual root cause of the
+backend never coming up, confirmed from a real Render build log. A `backend/.npmrc` with
+`production=false` is also committed as a belt-and-suspenders fix, but set `--include=dev`
+explicitly on the build command regardless — it isn't sensitive to which npm version Render runs.
 
 (`npm run build` compiles TypeScript to `dist/`, which `npm start` runs — if Render's build
 command was only `npm install`, `dist/server.js` wouldn't exist and the service would crash-loop
