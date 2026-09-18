@@ -16,6 +16,7 @@ const emptyForm = {
   oemNumber: "",
   basePrice: "",
   gstRate: "18",
+  stock: "0",
   status: "draft" as ProductStatus,
   description: "",
   images: [] as string[]
@@ -32,6 +33,8 @@ export function useSellerProductForm() {
 
   const [form, setForm] = useState(emptyForm);
   const [productId, setProductId] = useState<number | null>(null);
+  // See AdminProductForm's hook for why this is tracked separately from productId.
+  const [defaultVariant, setDefaultVariant] = useState<{ id: number; name: string } | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
@@ -50,6 +53,8 @@ export function useSellerProductForm() {
       .then((res) => {
         const p = res.data;
         setProductId(p.id);
+        const variant = p.variants?.[0];
+        setDefaultVariant(variant ? { id: variant.id, name: variant.name } : null);
         setForm({
           title: p.title,
           sku: p.sku,
@@ -59,6 +64,7 @@ export function useSellerProductForm() {
           oemNumber: p.oemNumber ?? "",
           basePrice: String(p.basePrice),
           gstRate: String(p.gstRate),
+          stock: String(variant?.stock ?? 0),
           status: p.status,
           description: p.description ?? "",
           images: p.images ?? []
@@ -85,10 +91,16 @@ export function useSellerProductForm() {
     setErrors({});
     setSaving(true);
     try {
+      const { stock, ...rest } = parsed.data;
       const payload = {
-        ...parsed.data,
+        ...rest,
         categoryId: Number(parsed.data.categoryId),
-        brandId: Number(parsed.data.brandId)
+        brandId: Number(parsed.data.brandId),
+        variants: [
+          defaultVariant
+            ? { id: defaultVariant.id, name: defaultVariant.name, stock }
+            : { name: "Standard", priceDelta: 0, stock }
+        ]
       };
       if (isEdit && productId != null) {
         await sellerService.updateProduct(productId, payload as any);

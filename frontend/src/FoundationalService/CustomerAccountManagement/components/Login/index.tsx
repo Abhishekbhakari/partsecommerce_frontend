@@ -14,13 +14,18 @@ export default function Login() {
     requestId,
     otp,
     setOtp,
+    emailStep,
+    setEmailStep,
+    name,
+    setName,
     email,
     setEmail,
     password,
     setPassword,
     handleRequestOtp,
     handleVerifyOtp,
-    handleEmailLogin
+    handleEmailLogin,
+    handleEmailRegister
   } = useLogin();
 
   return (
@@ -67,7 +72,7 @@ export default function Login() {
               </Button>
             </form>
           )
-        ) : (
+        ) : emailStep === "login" ? (
           <form onSubmit={handleEmailLogin} className="space-y-3">
             <div>
               <label className="mb-1 block text-xs font-semibold uppercase text-muted-foreground">Email</label>
@@ -80,6 +85,43 @@ export default function Login() {
             <Button type="submit" className="w-full" loading={loading}>
               Sign In
             </Button>
+            <button
+              type="button"
+              onClick={() => setEmailStep("register")}
+              className="w-full text-center text-sm font-semibold text-primary hover:underline"
+            >
+              New here? Create an account
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleEmailRegister} className="space-y-3">
+            <div>
+              <label className="mb-1 block text-xs font-semibold uppercase text-muted-foreground">Name</label>
+              <Input value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold uppercase text-muted-foreground">Email</label>
+              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold uppercase text-muted-foreground">Password</label>
+              <Input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="new-password"
+              />
+            </div>
+            <Button type="submit" className="w-full" loading={loading}>
+              Create Account
+            </Button>
+            <button
+              type="button"
+              onClick={() => setEmailStep("login")}
+              className="w-full text-center text-sm font-semibold text-primary hover:underline"
+            >
+              Already have an account? Sign in
+            </button>
           </form>
         )}
 

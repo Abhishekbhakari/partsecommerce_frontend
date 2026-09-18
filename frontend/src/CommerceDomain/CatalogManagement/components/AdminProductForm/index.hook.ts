@@ -18,6 +18,7 @@ const emptyForm = {
   oemNumber: "",
   basePrice: "",
   gstRate: "18",
+  stock: "0",
   status: "draft" as ProductStatus,
   description: "",
   images: [] as string[]
@@ -32,6 +33,11 @@ export function useAdminProductForm() {
   // The route param is the product's slug (needed for the public GET /products/:slug lookup),
   // but PATCH /admin/products/:id takes the numeric id — captured here once the product loads.
   const [productId, setProductId] = useState<number | null>(null);
+  // The product's first variant, if one already exists (edit mode) — stock lives on the variant,
+  // not the product itself, so updating it means updating this variant by id (keeping its real
+  // name, e.g. from a bulk CSV import) rather than creating a second one. Null on create, where
+  // the backend makes a "Standard" variant for us.
+  const [defaultVariant, setDefaultVariant] = useState<{ id: number; name: string } | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
@@ -55,6 +61,8 @@ export function useAdminProductForm() {
       .then((res) => {
         const p = res.data;
         setProductId(p.id);
+        const variant = p.variants?.[0];
+        setDefaultVariant(variant ? { id: variant.id, name: variant.name } : null);
         setForm({
           title: p.title,
           sku: p.sku,
@@ -65,6 +73,7 @@ export function useAdminProductForm() {
           oemNumber: p.oemNumber ?? "",
           basePrice: String(p.basePrice),
           gstRate: String(p.gstRate),
+          stock: String(variant?.stock ?? 0),
           status: p.status,
           description: p.description ?? "",
           images: p.images ?? []
@@ -91,11 +100,20 @@ export function useAdminProductForm() {
     setErrors({});
     setSaving(true);
     try {
+      const { stock, ...rest } = parsed.data;
       const payload = {
-        ...parsed.data,
+        ...rest,
         categoryId: Number(parsed.data.categoryId),
         brandId: Number(parsed.data.brandId),
-        sellerId: Number(parsed.data.sellerId)
+        sellerId: Number(parsed.data.sellerId),
+        // Stock lives on the product's variant, not the product row itself (see
+        // docs/DATA_MODEL.md) — this form only manages a single variant. On edit, update the
+        // existing one by id (preserving its real name); on create, the backend makes one.
+        variants: [
+          defaultVariant
+            ? { id: defaultVariant.id, name: defaultVariant.name, stock }
+            : { name: "Standard", priceDelta: 0, stock }
+        ]
       };
       if (isEdit && productId != null) {
         await adminProductService.update(productId, payload as any);

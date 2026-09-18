@@ -104,6 +104,15 @@ export default function AdminProductForm() {
             </div>
 
             <div>
+              <Label>Stock (units available)</Label>
+              <Input type="number" min={0} value={form.stock} onChange={(e) => setField("stock", e.target.value)} error={errors.stock} />
+              {errors.stock && <p className="mt-1 text-xs text-destructive">{errors.stock}</p>}
+              <p className="mt-1 text-xs text-muted-foreground">
+                A product with 0 stock shows as "Out of stock" to buyers even if it's otherwise active.
+              </p>
+            </div>
+
+            <div>
               <Label>Description</Label>
               <Textarea value={form.description} onChange={(e) => setField("description", e.target.value)} rows={5} />
             </div>

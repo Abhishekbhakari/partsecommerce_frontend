@@ -5,6 +5,12 @@ export const emailLoginSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters")
 });
 
+export const emailRegisterSchema = z.object({
+  name: z.string().min(1, "Enter your name"),
+  email: z.string().email("Enter a valid email"),
+  password: z.string().min(6, "Password must be at least 6 characters")
+});
+
 export const otpRequestSchema = z.object({
   identifier: z.string().min(6, "Enter a valid phone number or email")
 });

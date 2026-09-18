@@ -12,6 +12,7 @@ export const adminProductFormSchema = z.object({
   oemNumber: z.string().optional(),
   basePrice: z.coerce.number().min(1, "Price must be greater than 0"),
   gstRate: z.coerce.number().min(0).max(28),
+  stock: z.coerce.number().int("Whole numbers only").min(0, "Stock can't be negative"),
   status: z.enum(["draft", "active", "archived"]),
   description: z.string().optional(),
   images: z.array(z.string()).optional().default([])

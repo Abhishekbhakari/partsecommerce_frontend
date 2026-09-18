@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { customerAuthService } from "../../service/auth.service";
-import { emailLoginSchema, otpRequestSchema, otpVerifySchema } from "../../validators/Login";
+import { emailLoginSchema, emailRegisterSchema, otpRequestSchema, otpVerifySchema } from "../../validators/Login";
 import { useAppDispatch } from "@/Common/hooks/useAppRedux";
 import { customerLoginSucceeded } from "@/redux/authSlice";
 import { getErrorMessage } from "@/Common/types/api";
@@ -24,6 +24,8 @@ export function useLogin() {
   const [otp, setOtp] = useState("");
 
   // Email flow
+  const [emailStep, setEmailStep] = useState<"login" | "register">("login");
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -88,6 +90,24 @@ export function useLogin() {
     }
   };
 
+  const handleEmailRegister = async (e: FormEvent) => {
+    e.preventDefault();
+    const parsed = emailRegisterSchema.safeParse({ name, email, password });
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0].message);
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await customerAuthService.emailRegister(name, email, password);
+      finishLogin(res.data);
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Couldn't create your account — that email may already be registered."));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     mode,
     setMode,
@@ -97,12 +117,17 @@ export function useLogin() {
     requestId,
     otp,
     setOtp,
+    emailStep,
+    setEmailStep,
+    name,
+    setName,
     email,
     setEmail,
     password,
     setPassword,
     handleRequestOtp,
     handleVerifyOtp,
-    handleEmailLogin
+    handleEmailLogin,
+    handleEmailRegister
   };
 }
