@@ -6,14 +6,18 @@ import {
     Shipment,
     User,
     ProductVariant,
-    Product
+    Product,
+    FulfillmentProof
 } from '../../../../../Common/database/models';
 
 const DETAIL_INCLUDE = [
     {
         model: OrderItem,
         as: 'items',
-        include: [{ model: ProductVariant, as: 'variant', include: [{ model: Product, as: 'product' }] }]
+        include: [
+            { model: ProductVariant, as: 'variant', include: [{ model: Product, as: 'product' }] },
+            { model: FulfillmentProof, as: 'proofs' }
+        ]
     },
     { model: Payment, as: 'payment' },
     { model: Shipment, as: 'shipment' }

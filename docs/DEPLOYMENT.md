@@ -106,3 +106,23 @@ Then open the Vercel URL in a real browser and check the Network tab — API cal
 `.../api/v1/...` and return data, not CORS errors or 404s. If you see a CORS error specifically,
 double check `ALLOWED_ORIGINS` on Render exactly matches your Vercel URL (protocol + host, no
 trailing slash, no path).
+
+
+## Image storage in production (required for product photos AND dispatch/delivery proofs)
+
+Render's web-service filesystem is **ephemeral**: everything written to local disk (which is where
+uploads go by default) is wiped on every redeploy and restart. That would silently delete product
+photos and — worse — the seller's proof-of-dispatch/delivery photos, which are dispute evidence.
+
+The backend switches to Cloudinary automatically when these three env vars are set on the Render
+service (free tier is plenty to start; sign up at cloudinary.com, they're on the dashboard):
+
+| Key | Value |
+|---|---|
+| `CLOUDINARY_CLOUD_NAME` | your cloud name |
+| `CLOUDINARY_API_KEY` | your API key |
+| `CLOUDINARY_API_SECRET` | your API secret |
+
+With them unset the app still works, but logs a loud warning at boot in production and uploads
+will not survive a redeploy. Images uploaded *before* you set these (they live on Render's disk)
+are already gone or will be on the next restart — re-upload them once Cloudinary is configured.

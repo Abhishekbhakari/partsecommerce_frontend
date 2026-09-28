@@ -23,7 +23,7 @@ import { categoryRouter, categoryAdminRouter } from './FoundationalService/Maste
 import { brandRouter, brandAdminRouter } from './FoundationalService/MasterManagement/api/brands/brand.router';
 import couponRouter from './FoundationalService/MasterManagement/api/coupons/coupon.router';
 import bannerRouter from './FoundationalService/MasterManagement/api/banners/banner.router';
-import uploadRouter from './FoundationalService/MasterManagement/api/uploads/upload.router';
+import uploadRouter, { sellerUploadRouter } from './FoundationalService/MasterManagement/api/uploads/upload.router';
 
 import { productRouter, productAdminRouter, sellerProductRouter } from './CommerceDomain/CatalogManagement/api/products/product.router';
 import inventoryRouter from './CommerceDomain/CatalogManagement/api/products/inventory.router';
@@ -52,6 +52,11 @@ const NAMESPACE = '[APPLICATION]:';
 const API_BASE = '/api/v1';
 
 app.disable('x-powered-by');
+
+/* Behind Render's/Vercel's HTTPS proxy, req.protocol would otherwise report 'http' and req.ip the
+   proxy's address — breaks absolute upload URLs (mixed content on an https site) and makes every
+   client share one rate-limit bucket. Trust exactly one proxy hop. */
+app.set('trust proxy', 1);
 
 app.use(
     helmet({
@@ -166,6 +171,7 @@ app.use(`${API_BASE}/admin/reports`, reportRouter);
 
 // --- FoundationalService: SellerManagement (Phase 3 marketplace) ---
 app.use(`${API_BASE}/seller/auth`, sellerAuthRouter);
+app.use(`${API_BASE}/seller/uploads`, sellerUploadRouter);
 app.use(`${API_BASE}/seller`, sellerPortalRouter);
 app.use(`${API_BASE}/seller/products`, sellerProductRouter);
 app.use(`${API_BASE}/admin/sellers`, sellerAdminRouter);

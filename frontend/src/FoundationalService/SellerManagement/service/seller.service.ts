@@ -34,8 +34,10 @@ export const sellerService = {
   listOrders: (params: { page?: number; pageSize?: number; status?: string }) =>
     api.get<{ items: SellerOrderItemRow[]; total: number }>("/seller/orders", { params }),
 
-  updateFulfillment: (orderItemId: number, status: string) =>
-    api.patch(`/seller/orders/items/${orderItemId}/fulfillment`, { status }),
+  /** `proofImages`/`note` are required by the backend when dispatching an item for the first time
+   * and when marking it delivered (it 400s otherwise) — see SellerOrders' proof dialog. */
+  updateFulfillment: (orderItemId: number, status: string, proof?: { proofImages: string[]; note?: string }) =>
+    api.patch<SellerOrderItemRow>(`/seller/orders/items/${orderItemId}/fulfillment`, { status, ...proof }),
 
   // Contract deviation found live: backend returns `{ payouts: [...], pendingBalance }`, not
   // `{ items: [...] }` like every other list endpoint in this app — verified via

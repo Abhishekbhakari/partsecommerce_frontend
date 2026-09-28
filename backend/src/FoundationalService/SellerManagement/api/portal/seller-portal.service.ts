@@ -1,5 +1,5 @@
 import SellerPortalRepository from './repository/seller-portal.repository';
-import { ForbiddenException, RecordNotFoundException } from '../../../../Common/httpErrorClasses';
+import { BadRequestException, ForbiddenException, RecordNotFoundException } from '../../../../Common/httpErrorClasses';
 import { buildPagination } from '../../../../Common/utils/Pagination';
 import { FulfillmentUpdatePayload } from './validations/seller-portal.validation';
 
@@ -35,7 +35,42 @@ class SellerPortalService {
         if (!orderItem) throw new RecordNotFoundException('Order item not found.');
         if (orderItem.sellerId !== sellerId) throw new ForbiddenException('You do not own this order item.');
 
+        // ---- Proof-of-dispatch / proof-of-delivery gate ------------------------------------
+        // Enforced HERE (server-side), not just in the UI, so it can't be skipped by calling the
+        // API directly. Dispatch proof: the item is leaving the seller for the first time (i.e. it
+        // was still 'pending' and is moving to any shipped state). Delivery proof: marking it
+        // delivered. Photos are stored with a server-side timestamp so they can back a dispute.
+        const proofImages = payload.proofImages ?? [];
+        const isFirstDispatch = orderItem.fulfillmentStatus === 'pending' && SHIPPED_STATUSES.includes(payload.status) && payload.status !== 'delivered';
+        const isDelivery = payload.status === 'delivered' && orderItem.fulfillmentStatus !== 'delivered';
+        const stage: 'dispatch' | 'delivery' | null = isDelivery ? 'delivery' : isFirstDispatch ? 'dispatch' : null;
+
+        // Jumping straight pending -> delivered still needs BOTH proofs in principle, but a single
+        // photo set is accepted and recorded as delivery proof; we additionally require that a
+        // dispatch proof exists so the chain of custody has no gap.
+        if (stage === 'delivery' && (await SellerPortalRepository.countProofs(orderItemId, 'dispatch')) === 0) {
+            throw new BadRequestException(
+                'This item has no dispatch photo on record. Mark it as shipped with a photo of the packed item first, then mark it delivered.'
+            );
+        }
+        if (stage && proofImages.length === 0) {
+            throw new BadRequestException(
+                stage === 'dispatch'
+                    ? 'Upload at least one photo of the packed item before marking it as shipped.'
+                    : 'Upload at least one delivery photo before marking this item as delivered.'
+            );
+        }
+
         await SellerPortalRepository.updateOrderItemFulfillment(orderItemId, payload.status);
+        if (stage) {
+            await SellerPortalRepository.createProof({
+                orderItemId,
+                sellerId,
+                stage,
+                imageUrls: proofImages,
+                note: payload.note ?? null
+            });
+        }
 
         // Create/update this seller's Shipment for the order once any of their items moves
         // past 'pending', and (re)link every one of their order items in this order to it.

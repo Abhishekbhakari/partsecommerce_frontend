@@ -4,6 +4,7 @@ import { Badge } from "@/Common/components/ui/badge";
 import { Card, CardContent } from "@/Common/components/ui/card";
 import { Button } from "@/Common/components/ui/button";
 import { Spinner } from "@/Common/components/ui/spinner";
+import { ProofGallery } from "@/Common/components/ProofGallery";
 
 export default function AdminOrderDetail() {
   const { order, loading, updating, updateStatus, statusFlow } = useAdminOrderDetail();
@@ -52,11 +53,15 @@ export default function AdminOrderDetail() {
             <p className="mb-3 font-semibold">Items</p>
             <div className="divide-y divide-border">
               {order.items?.map((item) => (
-                <div key={item.id} className="flex justify-between py-2 text-sm">
-                  <span>
-                    {item.productTitleSnapshot} × {item.qty}
-                  </span>
-                  <span className="font-semibold">{formatMoney(item.unitPrice * item.qty)}</span>
+                <div key={item.id} className="py-2 text-sm">
+                  <div className="flex justify-between">
+                    <span>
+                      {item.productTitleSnapshot} × {item.qty}
+                    </span>
+                    <span className="font-semibold">{formatMoney(item.unitPrice * item.qty)}</span>
+                  </div>
+                  {/* Seller-submitted dispatch/delivery photos — evidence for disputes and returns. */}
+                  <ProofGallery proofs={item.proofs} />
                 </div>
               ))}
             </div>

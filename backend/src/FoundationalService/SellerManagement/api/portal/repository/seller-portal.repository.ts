@@ -7,7 +7,8 @@ import {
     Shipment,
     ShipmentItem,
     SellerPayout,
-    User
+    User,
+    FulfillmentProof
 } from '../../../../../Common/database/models';
 
 class SellerPortalRepository {
@@ -20,16 +21,28 @@ class SellerPortalRepository {
                     as: 'order',
                     attributes: ['id', 'orderNumber', 'status', 'shippingAddress', 'guestEmail', 'userId', 'placedAt'],
                     include: [{ model: User, as: 'user', attributes: ['id', 'name', 'email', 'phone'] }]
-                }
+                },
+                { model: FulfillmentProof, as: 'proofs' }
             ],
             order: [['createdAt', 'DESC']],
+            distinct: true,
             offset,
             limit
         });
     }
 
     findOrderItemById(id: number) {
-        return OrderItem.findByPk(id, { include: [{ model: Order, as: 'order' }] });
+        return OrderItem.findByPk(id, {
+            include: [{ model: Order, as: 'order' }, { model: FulfillmentProof, as: 'proofs' }]
+        });
+    }
+
+    createProof(data: { orderItemId: number; sellerId: number; stage: 'dispatch' | 'delivery'; imageUrls: string[]; note?: string | null }) {
+        return FulfillmentProof.create(data as never);
+    }
+
+    countProofs(orderItemId: number, stage: 'dispatch' | 'delivery') {
+        return FulfillmentProof.count({ where: { orderItemId, stage } });
     }
 
     updateOrderItemFulfillment(id: number, status: string) {

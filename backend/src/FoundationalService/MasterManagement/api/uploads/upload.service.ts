@@ -9,7 +9,9 @@ class UploadService {
             throw new BadRequestException('No file uploaded. Send the image as multipart field "file".');
         }
         const stored = await getImageStorage().save(file);
-        return { url: `${baseUrl}${stored.url}`, filename: stored.filename };
+        // Cloud providers return an absolute https URL already; only local-disk paths need the origin.
+        const url = /^https?:\/\//.test(stored.url) ? stored.url : `${baseUrl}${stored.url}`;
+        return { url, filename: stored.filename };
     }
 
     async removeImage(filename: string) {

@@ -128,6 +128,17 @@ export type OrderStatus =
 
 export type FulfillmentStatus = "pending" | "picked_up" | "in_transit" | "out_for_delivery" | "delivered" | "failed";
 
+/** Photo evidence a seller submits when dispatching an item and again on delivery. `createdAt` is
+ * set by the server, not the client, so it is a trustworthy "when was this claimed" timestamp. */
+export interface FulfillmentProof {
+  id: number;
+  orderItemId: number;
+  stage: "dispatch" | "delivery";
+  imageUrls: string[];
+  note: string | null;
+  createdAt: string;
+}
+
 export interface OrderItem {
   id: number;
   orderId: number;
@@ -141,6 +152,7 @@ export interface OrderItem {
   commissionAmount?: number;
   sellerEarning?: number;
   fulfillmentStatus?: FulfillmentStatus;
+  proofs?: FulfillmentProof[];
 }
 
 export interface Order {

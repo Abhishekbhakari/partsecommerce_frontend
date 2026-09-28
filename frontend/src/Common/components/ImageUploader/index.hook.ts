@@ -6,12 +6,13 @@ interface UseImageUploaderArgs {
   images: string[];
   onChange: (images: string[]) => void;
   maxImages?: number;
+  scope?: "admin" | "seller";
 }
 
 /** Drag-drop/file-picker multi-image uploader backed by `POST /admin/uploads/image` — used by
  * both the admin product form (multi-image, reorder/primary) and the banner form (single image),
  * per docs/PHASE2_ADDENDUM.md §1/§5. */
-export function useImageUploader({ images, onChange, maxImages = 8 }: UseImageUploaderArgs) {
+export function useImageUploader({ images, onChange, maxImages = 8, scope = "admin" }: UseImageUploaderArgs) {
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -29,7 +30,7 @@ export function useImageUploader({ images, onChange, maxImages = 8 }: UseImageUp
       const toUpload = list.slice(0, remaining);
       const uploaded: string[] = [];
       for (const file of toUpload) {
-        const res = await uploadService.uploadImage(file);
+        const res = await uploadService.uploadImage(file, scope);
         uploaded.push(res.data.url);
       }
       onChange([...images, ...uploaded]);

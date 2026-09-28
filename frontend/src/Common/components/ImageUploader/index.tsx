@@ -8,17 +8,22 @@ interface ImageUploaderProps {
   maxImages?: number;
   /** When true (multi-image, e.g. product gallery) shows reorder/primary controls per thumbnail. */
   showPrimary?: boolean;
+  /** Which login uploads these — sellers must pass "seller" (the admin endpoint rejects them). */
+  scope?: "admin" | "seller";
+  /** Use the phone camera directly on mobile (proof photos are taken on the spot). */
+  capture?: boolean;
 }
 
 /** Real drag-drop/file-picker image uploader wired to `POST /admin/uploads/image` — replaces raw
  * image-URL text inputs in the admin product form and banner form, per
  * docs/PHASE2_ADDENDUM.md §5. Shows preview thumbnails; when `showPrimary` is set (product
  * gallery) also supports reorder and "set as primary" (first image = primary). */
-export function ImageUploader({ images, onChange, maxImages = 8, showPrimary = false }: ImageUploaderProps) {
+export function ImageUploader({ images, onChange, maxImages = 8, showPrimary = false, scope = "admin", capture = false }: ImageUploaderProps) {
   const { uploading, dragActive, inputRef, setDragActive, uploadFiles, handleDrop, removeAt, setPrimary, move } = useImageUploader({
     images,
     onChange,
-    maxImages
+    maxImages,
+    scope
   });
 
   return (
@@ -45,6 +50,7 @@ export function ImageUploader({ images, onChange, maxImages = 8, showPrimary = f
           ref={inputRef}
           type="file"
           accept="image/*"
+          {...(capture ? { capture: "environment" as const } : {})}
           multiple={maxImages > 1}
           className="hidden"
           onChange={(e) => e.target.files && uploadFiles(e.target.files)}

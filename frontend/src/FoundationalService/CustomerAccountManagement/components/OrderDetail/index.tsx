@@ -6,6 +6,7 @@ import { Badge } from "@/Common/components/ui/badge";
 import { Card, CardContent } from "@/Common/components/ui/card";
 import { Button } from "@/Common/components/ui/button";
 import { Spinner } from "@/Common/components/ui/spinner";
+import { ProofGallery } from "@/Common/components/ProofGallery";
 import { Breadcrumb } from "@/Common/components/ui/breadcrumb";
 
 const TRACKABLE_STATUSES = ["confirmed", "packed", "shipped", "delivered"];
@@ -36,12 +37,16 @@ export default function OrderDetail() {
             <p className="mb-3 font-semibold">Items</p>
             <div className="divide-y divide-border">
               {order.items?.map((item) => (
-                <div key={item.id} className="flex items-center justify-between py-2 text-sm">
-                  <div>
-                    <p className="font-medium">{item.productTitleSnapshot}</p>
-                    <p className="text-xs text-muted-foreground">Qty {item.qty}</p>
+                <div key={item.id} className="py-2 text-sm">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">{item.productTitleSnapshot}</p>
+                      <p className="text-xs text-muted-foreground">Qty {item.qty}</p>
+                    </div>
+                    <span className="font-semibold">{formatMoney(item.unitPrice * item.qty)}</span>
                   </div>
-                  <span className="font-semibold">{formatMoney(item.unitPrice * item.qty)}</span>
+                  {/* Photos the seller took when packing and delivering this item. */}
+                  <ProofGallery proofs={item.proofs} />
                 </div>
               ))}
             </div>

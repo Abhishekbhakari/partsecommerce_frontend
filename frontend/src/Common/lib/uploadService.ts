@@ -9,10 +9,12 @@ export interface UploadedImage {
 }
 
 export const uploadService = {
-  uploadImage: (file: File) => {
+  /** `scope` picks the endpoint (and therefore which login's token is sent — see `isSellerRoute`
+   * in api.ts): sellers can't call the admin-only route, so seller-side forms must pass "seller". */
+  uploadImage: (file: File, scope: "admin" | "seller" = "admin") => {
     const form = new FormData();
     form.append("file", file);
-    return api.post<UploadedImage>("/admin/uploads/image", form, {
+    return api.post<UploadedImage>(`/${scope}/uploads/image`, form, {
       headers: { "Content-Type": "multipart/form-data" }
     });
   },

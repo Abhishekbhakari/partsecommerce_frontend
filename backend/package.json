@@ -1,4 +1,4 @@
-{
+ {
   "name": "spare-parts-backend",
   "version": "1.0.0",
   "description": "Spare Parts E-commerce Platform — Backend API (Node.js + TypeScript + Express + Sequelize/PostgreSQL)",

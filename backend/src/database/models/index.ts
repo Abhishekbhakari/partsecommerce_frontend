@@ -23,6 +23,7 @@ import { Seller } from './Seller';
 import { SellerPayout } from './SellerPayout';
 import { Settings } from './Settings';
 import { ShipmentItem } from './ShipmentItem';
+import { FulfillmentProof } from './FulfillmentProof';
 
 /* ---- User ---- */
 User.hasMany(Address, { foreignKey: 'userId', as: 'addresses' });
@@ -112,6 +113,11 @@ ShipmentItem.belongsTo(OrderItem, { foreignKey: 'orderItemId', as: 'orderItem' }
 Coupon.hasMany(Order, { foreignKey: 'couponId', as: 'orders' });
 Order.belongsTo(Coupon, { foreignKey: 'couponId', as: 'coupon' });
 
+OrderItem.hasMany(FulfillmentProof, { foreignKey: 'orderItemId', as: 'proofs' });
+FulfillmentProof.belongsTo(OrderItem, { foreignKey: 'orderItemId', as: 'orderItem' });
+Seller.hasMany(FulfillmentProof, { foreignKey: 'sellerId', as: 'fulfillmentProofs' });
+FulfillmentProof.belongsTo(Seller, { foreignKey: 'sellerId', as: 'seller' });
+
 OrderItem.hasOne(Review, { foreignKey: 'orderItemId', as: 'review' });
 Review.belongsTo(OrderItem, { foreignKey: 'orderItemId', as: 'orderItem' });
 
@@ -140,5 +146,6 @@ export {
     Seller,
     SellerPayout,
     Settings,
-    ShipmentItem
+    ShipmentItem,
+    FulfillmentProof
 };

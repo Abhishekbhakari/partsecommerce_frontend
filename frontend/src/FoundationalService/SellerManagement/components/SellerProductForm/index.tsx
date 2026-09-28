@@ -108,7 +108,7 @@ export default function SellerProductForm() {
 
             <div>
               <Label>Product Images</Label>
-              <ImageUploader images={form.images} onChange={(images) => setField("images", images)} maxImages={8} showPrimary />
+              <ImageUploader images={form.images} onChange={(images) => setField("images", images)} maxImages={8} showPrimary scope="seller" />
             </div>
 
             <div className="flex justify-end gap-3 pt-2">

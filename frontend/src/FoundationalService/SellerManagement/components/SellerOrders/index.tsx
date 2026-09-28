@@ -1,4 +1,6 @@
 import { useSellerOrders, FULFILLMENT_STATUSES } from "./index.hook";
+import { ProofDialog } from "./ProofDialog";
+import { ProofGallery } from "@/Common/components/ProofGallery";
 import { formatMoney } from "@/Common/lib/utils";
 import { Badge } from "@/Common/components/ui/badge";
 import { Select } from "@/Common/components/ui/select";
@@ -15,7 +17,7 @@ const STATUS_BADGE: Record<string, "secondary" | "accent" | "success" | "destruc
 };
 
 export default function SellerOrders() {
-  const { items, total, loading, updatingId, updateStatus } = useSellerOrders();
+  const { items, total, loading, updatingId, pending, cancelPending, requestStatusChange, confirmWithProof } = useSellerOrders();
 
   const columns: DataTableColumn<SellerOrderItemRow>[] = [
     {
@@ -36,13 +38,18 @@ export default function SellerOrders() {
       )
     },
     {
+      key: "proof",
+      header: "Photo proof",
+      render: (it) => (it.proofs?.length ? <ProofGallery proofs={it.proofs} compact /> : <span className="text-xs text-muted-foreground">None yet</span>)
+    },
+    {
       key: "actions",
       header: "Update",
       render: (it) => (
         <Select
           value={it.fulfillmentStatus ?? "pending"}
           disabled={updatingId === it.id}
-          onChange={(e) => updateStatus(it.id, e.target.value as any)}
+          onChange={(e) => requestStatusChange(it, e.target.value as any)}
           options={FULFILLMENT_STATUSES.map((s) => ({ label: s.replace(/_/g, " "), value: s }))}
         />
       )
@@ -57,6 +64,15 @@ export default function SellerOrders() {
       <div className="mt-4">
         <DataTable columns={columns} rows={items} rowKey={(it) => it.id} loading={loading} emptyMessage="No order items yet." />
       </div>
+
+      <ProofDialog
+        open={pending != null}
+        stage={pending?.stage ?? "dispatch"}
+        itemLabel={pending ? `${pending.item.productTitleSnapshot} x ${pending.item.qty} - #${pending.item.order?.orderNumber ?? pending.item.orderId}` : ""}
+        submitting={pending != null && updatingId === pending.item.id}
+        onCancel={cancelPending}
+        onConfirm={confirmWithProof}
+      />
     </div>
   );
 }
