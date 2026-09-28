@@ -2,6 +2,7 @@ import { useSellerAuth } from "@/Common/hooks/useSellerAuth";
 import { Card, CardContent } from "@/Common/components/ui/card";
 import { Badge } from "@/Common/components/ui/badge";
 import { Label } from "@/Common/components/ui/label";
+import PickupAddressCard from "../PickupAddressCard";
 
 const STATUS_VARIANT = { pending: "secondary", approved: "success", rejected: "destructive", suspended: "outline" } as const;
 
@@ -44,6 +45,7 @@ export default function SellerProfile() {
           </div>
         </CardContent>
       </Card>
+      <PickupAddressCard />
     </div>
   );
 }

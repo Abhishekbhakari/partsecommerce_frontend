@@ -3,6 +3,16 @@ import sequelize from '../../Common/database/config/sequelize';
 
 export type SellerStatus = 'pending' | 'approved' | 'rejected' | 'suspended';
 
+/** Where the courier collects this seller's parcels — drives per-seller shipping quotes. */
+export interface SellerPickupAddress {
+    line1: string;
+    line2?: string;
+    city: string;
+    state: string;
+    pincode: string;
+    phone: string;
+}
+
 export interface SellerBankDetails {
     accountHolder?: string;
     accountNumber?: string;
@@ -19,6 +29,7 @@ export interface SellerAttributes {
     status: SellerStatus;
     commissionRateOverride: number | null;
     payoutBankDetails: SellerBankDetails | null;
+    pickupAddress: SellerPickupAddress | null;
     rejectionReason: string | null;
     approvedAt: Date | null;
     createdAt?: Date;
@@ -32,6 +43,7 @@ export type SellerCreationAttributes = Optional<
     | 'status'
     | 'commissionRateOverride'
     | 'payoutBankDetails'
+    | 'pickupAddress'
     | 'rejectionReason'
     | 'approvedAt'
     | 'createdAt'
@@ -48,6 +60,7 @@ export class Seller extends Model<SellerAttributes, SellerCreationAttributes> im
     declare status: SellerStatus;
     declare commissionRateOverride: number | null;
     declare payoutBankDetails: SellerBankDetails | null;
+    declare pickupAddress: SellerPickupAddress | null;
     declare rejectionReason: string | null;
     declare approvedAt: Date | null;
     declare readonly createdAt: Date;
@@ -69,6 +82,7 @@ Seller.init(
         },
         commissionRateOverride: { type: DataTypes.DECIMAL(5, 2), allowNull: true },
         payoutBankDetails: { type: DataTypes.JSONB, allowNull: true },
+        pickupAddress: { type: DataTypes.JSONB, allowNull: true },
         rejectionReason: { type: DataTypes.STRING, allowNull: true },
         approvedAt: { type: DataTypes.DATE, allowNull: true }
     },

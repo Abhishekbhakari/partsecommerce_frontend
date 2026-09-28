@@ -13,6 +13,8 @@ import WinstonLogger from '../../../../Common/logger/WinstonLogger';
 
 /**
  * Expected CSV columns: sku,title,categorySlug,brandSlug,partNumber,oemNumber,basePrice,gstRate,stock
+ * Optional shipping columns: weightGrams,lengthCm,widthCm,heightCm — used to price courier shipping;
+ * rows without a weight are quoted at a 500 g default, so include it whenever you can.
  * Import runs synchronously for the scaffold (row count for 5-10k SKUs is manageable in-process);
  * swap for a queued job (BullMQ/Sidekiq-style) behind the same jobId contract for real bulk loads.
  */
@@ -57,6 +59,19 @@ class BulkImportExportController {
                     const basePrice = Number(row.basePrice);
                     const gstRate = row.gstRate ? Number(row.gstRate) : 18;
 
+                    // Optional shipping inputs — only fields actually present in the row are applied,
+                    // so re-importing a sheet without these columns never wipes stored values.
+                    const shipping: Record<string, number> = {};
+                    for (const col of ['weightGrams', 'lengthCm', 'widthCm', 'heightCm'] as const) {
+                        const raw = row[col];
+                        if (raw === undefined || raw === '') continue;
+                        const n = Number(raw);
+                        if (!Number.isInteger(n) || n <= 0) {
+                            throw new Error(`${col} must be a whole number greater than 0.`);
+                        }
+                        shipping[col] = n;
+                    }
+
                     if (existing) {
                         if (sellerIdFromAuth && existing.sellerId !== sellerIdFromAuth) {
                             throw new Error('You do not own an existing product with this SKU.');
@@ -70,6 +85,11 @@ class BulkImportExportController {
                             basePrice,
                             gstRate
                         });
+                        if (Object.keys(shipping).length) {
+                            const full = await ProductRepository.findById(existing.id);
+                            const firstVariant = (full as unknown as { variants?: { id: number }[] } | null)?.variants?.[0];
+                            if (firstVariant) await ProductRepository.updateVariant(firstVariant.id, shipping);
+                        }
                         updated++;
                     } else {
                         const product = await ProductRepository.create({
@@ -87,7 +107,8 @@ class BulkImportExportController {
                         });
                         await ProductRepository.createVariant(product.id, {
                             name: 'Standard',
-                            stock: row.stock ? Number(row.stock) : 0
+                            stock: row.stock ? Number(row.stock) : 0,
+                            ...shipping
                         });
                         created++;
                     }

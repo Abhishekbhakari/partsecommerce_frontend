@@ -21,19 +21,41 @@ export function useAdminOrderDetail() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  const updateStatus = async (status: OrderStatus) => {
-    if (!order) return;
+  /** Set when the server refused Shipped/Delivered because the seller hasn't submitted photo proof —
+   * the admin can then choose to override with a written reason (owner-only, logged server-side). */
+  const [overrideFor, setOverrideFor] = useState<OrderStatus | null>(null);
+
+  const updateStatus = async (status: OrderStatus, overrideReason?: string) => {
+    if (!order) return false;
     setUpdating(true);
     try {
-      const res = await adminOrderService.updateStatus(order.id, status);
-      setOrder(res.data);
+      const res = await adminOrderService.updateStatus(order.id, status, overrideReason);
+      // The response has the order but the proof-bearing items come from the same detail include;
+      // keep whatever we already loaded if the update response omits them.
+      setOrder((prev) => ({ ...(prev as Order), ...res.data, items: res.data.items ?? prev?.items }));
       toast.success(`Order marked as ${status}`);
+      setOverrideFor(null);
+      return true;
     } catch (err) {
-      toast.error(getErrorMessage(err, "Couldn't update order status."));
+      const gated =
+        (status === "shipped" || status === "delivered") &&
+        !overrideReason &&
+        (err as { response?: { status?: number } })?.response?.status === 422;
+      if (gated) setOverrideFor(status);
+      else toast.error(getErrorMessage(err, "Couldn't update order status."));
+      return false;
     } finally {
       setUpdating(false);
     }
   };
 
-  return { order, loading, updating, updateStatus, statusFlow: STATUS_FLOW };
+  return {
+    order,
+    loading,
+    updating,
+    updateStatus,
+    statusFlow: STATUS_FLOW,
+    overrideFor,
+    cancelOverride: () => setOverrideFor(null)
+  };
 }

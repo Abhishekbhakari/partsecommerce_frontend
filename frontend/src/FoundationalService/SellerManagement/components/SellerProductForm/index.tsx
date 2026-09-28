@@ -93,6 +93,32 @@ export default function SellerProductForm() {
             </div>
 
             <div>
+              <Label>Packed weight (grams)</Label>
+              <Input type="number" min={1} value={form.weightGrams} onChange={(e) => setField("weightGrams", e.target.value)} error={errors.weightGrams} placeholder="e.g. 1200" />
+              {errors.weightGrams && <p className="mt-1 text-xs text-destructive">{errors.weightGrams}</p>}
+              <p className="mt-1 text-xs text-muted-foreground">
+                Weight of the item in its shipping box. Used to calculate the delivery charge — enter it accurately, couriers re-weigh parcels and bill the difference.
+              </p>
+              <div className="mt-3 grid grid-cols-3 gap-3">
+                <div>
+                  <Label>Length (cm)</Label>
+                  <Input type="number" min={1} value={form.lengthCm} onChange={(e) => setField("lengthCm", e.target.value)} error={errors.lengthCm} />
+                </div>
+                <div>
+                  <Label>Width (cm)</Label>
+                  <Input type="number" min={1} value={form.widthCm} onChange={(e) => setField("widthCm", e.target.value)} error={errors.widthCm} />
+                </div>
+                <div>
+                  <Label>Height (cm)</Label>
+                  <Input type="number" min={1} value={form.heightCm} onChange={(e) => setField("heightCm", e.target.value)} error={errors.heightCm} />
+                </div>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Box size is optional but matters for light, bulky parts — couriers charge on whichever is larger: real weight or size (L×W×H ÷ 5000).
+              </p>
+            </div>
+
+            <div>
               <Label>Stock (units available)</Label>
               <Input type="number" min={0} value={form.stock} onChange={(e) => setField("stock", e.target.value)} error={errors.stock} />
               {errors.stock && <p className="mt-1 text-xs text-destructive">{errors.stock}</p>}

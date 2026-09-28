@@ -5,7 +5,7 @@ import HttpCode from '../../../../Common/constants/HttpCode';
 import HttpSuccessMessage from '../../../../Common/constants/HttpSuccessMessage';
 import { parsePagination } from '../../../../Common/utils/Pagination';
 import SellerPortalService from './seller-portal.service';
-import { FulfillmentUpdateSchema } from './validations/seller-portal.validation';
+import { FulfillmentUpdateSchema, SellerProfileUpdateSchema } from './validations/seller-portal.validation';
 
 class SellerPortalController {
     public static async dashboard(req: Request, res: Response) {
@@ -35,6 +35,16 @@ class SellerPortalController {
                 req.user!.userId,
                 payload
             );
+            return sendSuccess(res, HttpCode.OK, result, HttpSuccessMessage.RECORD_UPDATED);
+        } catch (error) {
+            return ErrorHandler.commonErrorHandler(error, res);
+        }
+    }
+
+    public static async updateProfile(req: Request, res: Response) {
+        try {
+            const payload = SellerProfileUpdateSchema.parse(req.body);
+            const result = await SellerPortalService.updateProfile(req.user!.userId, payload);
             return sendSuccess(res, HttpCode.OK, result, HttpSuccessMessage.RECORD_UPDATED);
         } catch (error) {
             return ErrorHandler.commonErrorHandler(error, res);

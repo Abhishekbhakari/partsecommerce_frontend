@@ -41,7 +41,10 @@ export default function Checkout() {
     goToReview,
     placeOrder,
     placing,
-    paymentStatus
+    paymentStatus,
+    shippingQuote,
+    quotingShipping,
+    shipping
   } = useCheckout();
 
   if (loading) return <Spinner />;
@@ -236,9 +239,38 @@ export default function Checkout() {
                 <span>-{formatMoney(cart.discount)}</span>
               </div>
             )}
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Shipping</span>
+              <span>
+                {quotingShipping ? (
+                  <span className="text-xs text-muted-foreground">Calculating…</span>
+                ) : shipping != null ? (
+                  formatMoney(shipping)
+                ) : (
+                  <span className="text-xs text-muted-foreground">Add address</span>
+                )}
+              </span>
+            </div>
+            {/* Sellers ship from their own locations: a mixed cart is several parcels, each priced. */}
+            {shipping != null && shippingQuote && shippingQuote.shipments.length > 1 && (
+              <ul className="space-y-0.5 pl-2 text-xs text-muted-foreground">
+                {shippingQuote.shipments.map((s) => (
+                  <li key={s.sellerId} className="flex justify-between gap-2">
+                    <span>Shipped by {s.sellerName}</span>
+                    <span>{formatMoney(s.amountPaise)}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {shipping != null && shippingQuote?.etaDays != null && (
+              <p className="text-xs text-muted-foreground">Estimated delivery in ~{shippingQuote.etaDays} day(s)</p>
+            )}
+            {paymentMethod === "cod" && shipping != null && (
+              <p className="text-xs text-muted-foreground">Includes the cash-on-delivery handling fee.</p>
+            )}
             <div className="flex justify-between border-t border-border pt-2 text-base font-extrabold">
-              <span>Total</span>
-              <span>{formatMoney(cart.total)}</span>
+              <span>{shipping != null ? "Total" : "Total (before shipping)"}</span>
+              <span>{formatMoney(cart.total + (shipping ?? 0))}</span>
             </div>
           </CardContent>
         </Card>

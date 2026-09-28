@@ -19,6 +19,10 @@ const emptyForm = {
   basePrice: "",
   gstRate: "18",
   stock: "0",
+  weightGrams: "",
+  lengthCm: "",
+  widthCm: "",
+  heightCm: "",
   status: "draft" as ProductStatus,
   description: "",
   images: [] as string[]
@@ -74,6 +78,10 @@ export function useAdminProductForm() {
           basePrice: String(p.basePrice),
           gstRate: String(p.gstRate),
           stock: String(variant?.stock ?? 0),
+          weightGrams: variant?.weightGrams ? String(variant.weightGrams) : "",
+          lengthCm: variant?.lengthCm ? String(variant.lengthCm) : "",
+          widthCm: variant?.widthCm ? String(variant.widthCm) : "",
+          heightCm: variant?.heightCm ? String(variant.heightCm) : "",
           status: p.status,
           description: p.description ?? "",
           images: p.images ?? []
@@ -100,7 +108,10 @@ export function useAdminProductForm() {
     setErrors({});
     setSaving(true);
     try {
-      const { stock, ...rest } = parsed.data;
+      const { stock, weightGrams, lengthCm, widthCm, heightCm, ...rest } = parsed.data;
+      // Box size is optional: blank means "not provided", stored as null (not 0).
+      const dim = (v?: string) => (v ? Number(v) : null);
+      const shippingInputs = { weightGrams, lengthCm: dim(lengthCm), widthCm: dim(widthCm), heightCm: dim(heightCm) };
       const payload = {
         ...rest,
         categoryId: Number(parsed.data.categoryId),
@@ -111,8 +122,8 @@ export function useAdminProductForm() {
         // existing one by id (preserving its real name); on create, the backend makes one.
         variants: [
           defaultVariant
-            ? { id: defaultVariant.id, name: defaultVariant.name, stock }
-            : { name: "Standard", priceDelta: 0, stock }
+            ? { id: defaultVariant.id, name: defaultVariant.name, stock, ...shippingInputs }
+            : { name: "Standard", priceDelta: 0, stock, ...shippingInputs }
         ]
       };
       if (isEdit && productId != null) {

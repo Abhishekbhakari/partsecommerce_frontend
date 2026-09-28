@@ -85,7 +85,11 @@ api.interceptors.request.use((config) => {
   }
   const token = readToken();
   if (token) config.headers.Authorization = `Bearer ${token}`;
-  if (!token) config.headers["X-Cart-Session"] = getCartSessionId();
+  // Always identify the guest cart. The server uses it only when the caller is NOT a logged-in
+  // customer — and "has a token" is not the same as "is a customer": staff (admin) share this
+  // storage key, so gating the header on `!token` left an admin previewing the store with no cart
+  // identity at all (empty cart, checkout failing).
+  config.headers["X-Cart-Session"] = getCartSessionId();
   return config;
 });
 
@@ -151,9 +155,15 @@ api.interceptors.response.use(
       }
 
       const stored = sessionStorage.getItem(AUTH_STORAGE_KEY);
-      const refreshToken = stored ? JSON.parse(stored)?.refreshToken : null;
+      const session = stored ? JSON.parse(stored) : null;
+      const refreshToken = session?.refreshToken ?? null;
+      // Staff and customers share this storage key but are different principals with different
+      // refresh endpoints (each rejects the other's token). Refreshing an admin session through
+      // the customer endpoint always failed, so every admin action broke after the 15-minute
+      // access token expired.
+      const refreshPath = session?.admin ? "/admin/auth/refresh" : "/auth/refresh";
       const { data } = await axios.post(
-        `${API_BASE_URL}/auth/refresh`,
+        `${API_BASE_URL}${refreshPath}`,
         { refreshToken },
         { withCredentials: true }
       );

@@ -46,7 +46,10 @@ export interface ProductVariant {
   skuSuffix: string;
   priceDelta: number;
   stock: number;
-  weightGrams?: number;
+  weightGrams?: number | null;
+  lengthCm?: number | null;
+  widthCm?: number | null;
+  heightCm?: number | null;
   barcode?: string | null;
 }
 
@@ -241,6 +244,16 @@ export interface PayoutBankDetails {
   ifsc?: string;
 }
 
+/** Where couriers collect this seller's parcels; its pincode drives every shipping quote. */
+export interface PickupAddress {
+  line1: string;
+  line2?: string;
+  city: string;
+  state: string;
+  pincode: string;
+  phone: string;
+}
+
 export interface Seller {
   id: number;
   businessName: string;
@@ -250,6 +263,7 @@ export interface Seller {
   status: SellerStatus;
   commissionRateOverride?: number | null;
   payoutBankDetails?: PayoutBankDetails | null;
+  pickupAddress?: PickupAddress | null;
   rejectionReason?: string | null;
   approvedAt?: string | null;
   createdAt: string;

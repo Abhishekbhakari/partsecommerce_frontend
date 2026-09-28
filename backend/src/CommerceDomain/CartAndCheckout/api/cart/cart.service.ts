@@ -6,6 +6,7 @@ import {
     ValidationException
 } from '../../../../Common/httpErrorClasses';
 import { AddCartItemPayload, ApplyCouponPayload } from './validations/cart.validation';
+import ShippingRateService, { chargeableShippingPaise, toQuoteItems, QuotableRow } from '../../../ShippingManagement/api/rates/shippingRate.service';
 
 interface CartTotals {
     subtotal: number;
@@ -16,7 +17,11 @@ interface CartTotals {
 class CartService {
     /** Resolves (and lazily creates) the cart for a logged-in user or guest session. */
     private async resolveCart(req: Request) {
-        if (req.user?.userId) {
+        // Only a CUSTOMER token identifies a customer cart. Admin and seller tokens are separate
+        // principals whose numeric ids overlap with customer ids (admin #1 and customer #1 are
+        // different people) — trusting any token's userId here would hand an admin previewing the
+        // store customer #1's cart, and let them edit it.
+        if (req.user?.type === 'customer') {
             let cart = await CartRepository.findByUser(req.user.userId);
             if (!cart) cart = await CartRepository.create({ userId: req.user.userId });
             return cart;
@@ -160,13 +165,29 @@ class CartService {
         await CartRepository.deleteCart(guestCart.id);
     }
 
-    /** Simple pincode serviceability stub — every 6-digit Indian pincode is treated as serviceable. */
-    checkPincode(pincode: string) {
+    /**
+     * Delivery estimate for this cart to a pincode: serviceability + real shipping cost, priced per
+     * seller parcel (see ShippingRateService). Every 6-digit pincode is treated as serviceable —
+     * per-courier serviceability comes with live Shiprocket rates, which simply return no couriers
+     * (and fall back to the estimate) for pincodes nobody serves.
+     */
+    async checkPincode(req: Request, pincode: string, cod: boolean) {
         const serviceable = /^\d{6}$/.test(pincode);
+        if (!serviceable) return { serviceable: false, etaDays: null, shippingFee: null, shipments: [], live: ShippingRateService.isLive };
+
+        const cart = await this.resolveCart(req);
+        const full = await CartRepository.findById(cart.id);
+        const rows = ((full as unknown as { items?: QuotableRow[] })?.items ?? []) as QuotableRow[];
+        if (!rows.length) return { serviceable: true, etaDays: null, shippingFee: 0, shipments: [], live: ShippingRateService.isLive };
+
+        const quote = await ShippingRateService.quote(toQuoteItems(rows), pincode, cod);
+        const totals = this.computeTotals(full!);
         return {
-            serviceable,
-            etaDays: serviceable ? 4 : null,
-            shippingFee: serviceable ? 0 : null
+            serviceable: true,
+            etaDays: quote.etaDays,
+            shippingFee: chargeableShippingPaise(quote, totals.total),
+            shipments: quote.shipments,
+            live: ShippingRateService.isLive
         };
     }
 }

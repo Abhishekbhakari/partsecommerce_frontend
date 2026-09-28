@@ -10,7 +10,9 @@ export const ReturnOrderSchema = z.object({
 });
 
 export const UpdateOrderStatusSchema = z.object({
-    status: z.enum(['pending', 'confirmed', 'packed', 'shipped', 'delivered', 'cancelled', 'returned'])
+    status: z.enum(['pending', 'confirmed', 'packed', 'shipped', 'delivered', 'cancelled', 'returned']),
+    /** Owner-only escape hatch for the shipped/delivered proof gate — see OrderService.updateStatus. */
+    overrideReason: z.string().min(10, 'Explain why in at least 10 characters').max(300).optional()
 });
 
 export type CancelOrderPayload = z.infer<typeof CancelOrderSchema>;

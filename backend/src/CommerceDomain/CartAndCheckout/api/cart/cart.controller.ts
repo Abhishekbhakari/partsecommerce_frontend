@@ -69,7 +69,7 @@ class CartController {
         try {
             const pincode = String(req.query.pincode || '');
             if (!pincode) throw new BadRequestException('pincode query parameter is required.');
-            const result = CartService.checkPincode(pincode);
+            const result = await CartService.checkPincode(req, pincode, req.query.cod === '1');
             return sendSuccess(res, HttpCode.OK, result, HttpSuccessMessage.GET_RECORD);
         } catch (error) {
             return ErrorHandler.commonErrorHandler(error, res);

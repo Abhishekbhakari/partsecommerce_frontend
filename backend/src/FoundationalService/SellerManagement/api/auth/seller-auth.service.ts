@@ -98,6 +98,7 @@ class SellerAuthService {
             status: seller.status,
             commissionRateOverride: seller.commissionRateOverride,
             payoutBankDetails: seller.payoutBankDetails,
+            pickupAddress: seller.pickupAddress,
             approvedAt: seller.approvedAt
         };
     }

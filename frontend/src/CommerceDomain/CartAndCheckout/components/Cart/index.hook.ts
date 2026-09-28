@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { Cart } from "@/Common/types/entities";
 import { cartService } from "../../service/cart.service";
+import type { PincodeCheckResponse } from "../../types/cart.types";
 import { useAppDispatch } from "@/Common/hooks/useAppRedux";
 import { cartSynced } from "@/redux/cartSlice";
 import { getErrorMessage } from "@/Common/types/api";
@@ -12,7 +13,7 @@ export function useCart() {
   const [loading, setLoading] = useState(true);
   const [couponCode, setCouponCode] = useState("");
   const [pincode, setPincode] = useState("");
-  const [pincodeResult, setPincodeResult] = useState<{ serviceable: boolean; etaDays: number; shippingFee: number } | null>(null);
+  const [pincodeResult, setPincodeResult] = useState<PincodeCheckResponse | null>(null);
   const [checkingPincode, setCheckingPincode] = useState(false);
 
   const load = () => {
@@ -72,6 +73,18 @@ export function useCart() {
       toast.error(getErrorMessage(err));
     }
   };
+
+  // Weight (and so the shipping cost) changes whenever the cart does — refresh an already-shown
+  // quote quietly instead of leaving a stale price next to a different basket.
+  const cartSignature = cart?.items?.map((i) => `${i.id}:${i.qty}`).join(",") ?? "";
+  useEffect(() => {
+    if (!pincodeResult || !/^\d{6}$/.test(pincode)) return;
+    cartService
+      .checkPincode(pincode)
+      .then((res) => setPincodeResult(res.data))
+      .catch(() => undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cartSignature]);
 
   const checkPincode = async () => {
     if (!/^\d{6}$/.test(pincode)) {

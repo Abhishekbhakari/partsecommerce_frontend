@@ -65,8 +65,13 @@ class OrderController {
 
     public static async updateStatus(req: Request, res: Response) {
         try {
-            const { status } = UpdateOrderStatusSchema.parse(req.body);
-            const order = await OrderService.updateStatus(Number(req.params.id), status);
+            const { status, overrideReason } = UpdateOrderStatusSchema.parse(req.body);
+            const order = await OrderService.updateStatus(
+                Number(req.params.id),
+                status,
+                req.user ? { userId: req.user.userId, role: req.user.role } : undefined,
+                overrideReason
+            );
             return sendSuccess(res, HttpCode.OK, order, HttpSuccessMessage.RECORD_UPDATED);
         } catch (error) {
             return ErrorHandler.commonErrorHandler(error, res);

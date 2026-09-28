@@ -21,6 +21,10 @@ export default function BulkImportProducts() {
         Upsert products by SKU. Required columns: <code className="rounded bg-muted px-1 py-0.5 text-xs">sku, title, categorySlug, brandSlug, basePrice</code>.
         Optional: <code className="rounded bg-muted px-1 py-0.5 text-xs">partNumber, oemNumber, gstRate, stock</code>.
       </p>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Shipping (recommended): <code className="rounded bg-muted px-1 py-0.5 text-xs">weightGrams, lengthCm, widthCm, heightCm</code> — used to
+        calculate delivery charges. Rows without a weight are quoted as if they weighed 500 g, which under-charges heavy parts.
+      </p>
 
       <div
         onDragOver={(e) => {

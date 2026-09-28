@@ -7,6 +7,10 @@ export const ProductVariantInputSchema = z.object({
     priceDelta: z.number().int().optional(),
     stock: z.number().int().nonnegative().optional(),
     weightGrams: z.number().int().positive().nullable().optional(),
+    // Parcel dimensions (cm) — couriers bill the larger of dead vs volumetric (L x W x H / 5000) weight.
+    lengthCm: z.number().int().positive().nullable().optional(),
+    widthCm: z.number().int().positive().nullable().optional(),
+    heightCm: z.number().int().positive().nullable().optional(),
     barcode: z.string().nullable().optional()
 });
 

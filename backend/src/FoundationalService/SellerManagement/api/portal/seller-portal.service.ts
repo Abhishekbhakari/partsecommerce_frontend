@@ -1,7 +1,7 @@
 import SellerPortalRepository from './repository/seller-portal.repository';
 import { BadRequestException, ForbiddenException, RecordNotFoundException } from '../../../../Common/httpErrorClasses';
 import { buildPagination } from '../../../../Common/utils/Pagination';
-import { FulfillmentUpdatePayload } from './validations/seller-portal.validation';
+import { FulfillmentUpdatePayload, SellerProfileUpdatePayload } from './validations/seller-portal.validation';
 
 const SHIPPED_STATUSES = ['picked_up', 'in_transit', 'out_for_delivery', 'delivered'];
 const LOW_STOCK_THRESHOLD = 5;
@@ -113,6 +113,11 @@ class SellerPortalService {
         }
 
         return SellerPortalRepository.findOrderItemById(orderItemId);
+    }
+
+    async updateProfile(sellerId: number, payload: SellerProfileUpdatePayload) {
+        await SellerPortalRepository.updateSellerProfile(sellerId, { pickupAddress: payload.pickupAddress });
+        return { pickupAddress: payload.pickupAddress };
     }
 
     async listPayouts(sellerId: number) {

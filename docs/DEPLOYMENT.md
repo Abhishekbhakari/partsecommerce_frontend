@@ -126,3 +126,31 @@ service (free tier is plenty to start; sign up at cloudinary.com, they're on the
 With them unset the app still works, but logs a loud warning at boot in production and uploads
 will not survive a redeploy. Images uploaded *before* you set these (they live on Render's disk)
 are already gone or will be on the next restart — re-upload them once Cloudinary is configured.
+
+
+## Shipping cost (per-seller, from the buyer's pincode)
+
+Delivery is priced per seller parcel: each seller ships their own items from their own pickup
+pincode, so a cart with items from two sellers is two parcels and two freight charges. The cost
+comes from chargeable weight (the larger of real weight and L x W x H / 5000, in 500 g slabs),
+the zone between the two pincodes, and COD (a handling fee). Sellers set their pickup address
+under Seller Portal > Profile, and enter weight (and optionally box size) on every product.
+
+It works out of the box with an **estimate table** (`ZoneTableRateProvider.ts` - illustrative
+numbers, tune them to your real rate card). Set these on the Render service to switch to **live
+Shiprocket rates** for the cheapest available courier:
+
+| Key | Value |
+|---|---|
+| `SHIPROCKET_EMAIL` | email of a Shiprocket **API user** (Shiprocket > Settings > API) |
+| `SHIPROCKET_PASSWORD` | that API user's password |
+| `SHIPROCKET_RATE_INCLUDES_GST` | leave unset (we add 18% GST). Set `true` if your first invoice shows GST already inside the quoted rate. |
+| `DEFAULT_PICKUP_PINCODE` | origin assumed for a seller who hasn't set a pickup address yet (default `110001`) |
+| `FREE_SHIPPING_THRESHOLD_PAISE` | optional promo: waive shipping above this order value, e.g. `99900` for INR 999. Default `0` = never. **The platform absorbs the real freight when this is on.** |
+
+If a live Shiprocket call fails, checkout falls back to the estimate table instead of breaking.
+Live rates were built against Shiprocket's public API docs but could not be tested against a real
+account - check the first few quotes against the Shiprocket dashboard.
+
+Orders snapshot the per-seller breakdown that was charged (`orders.shippingBreakdown`), so later
+rate changes never rewrite history.

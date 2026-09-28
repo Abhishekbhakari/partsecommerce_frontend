@@ -11,5 +11,6 @@ export const cartService = {
   removeItem: (itemId: number) => api.delete<Cart>(`/cart/items/${itemId}`),
   applyCoupon: (code: string) => api.post<Cart>("/cart/apply-coupon", { code }),
   removeCoupon: () => api.delete<Cart>("/cart/coupon"),
-  checkPincode: (pincode: string) => api.get<PincodeCheckResponse>("/cart/pincode-check", { params: { pincode } })
+  checkPincode: (pincode: string, cod = false) =>
+    api.get<PincodeCheckResponse>("/cart/pincode-check", { params: { pincode, cod: cod ? 1 : 0 } })
 };

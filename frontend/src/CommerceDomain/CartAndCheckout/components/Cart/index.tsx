@@ -45,6 +45,12 @@ export default function Cart() {
     );
   }
 
+
+  // Shipping is only known once a pincode has been checked; until then the total is labelled as
+  // "before shipping" instead of silently understating what the buyer will pay.
+  const shipping = pincodeResult?.serviceable ? pincodeResult.shippingFee : null;
+  const grandTotal = cart.total + (shipping ?? 0);
+
   return (
     <div className="container py-6 pb-28 md:pb-6">
       <h1 className="text-xl font-extrabold sm:text-2xl">Your Cart ({cart.items.length})</h1>
@@ -94,11 +100,27 @@ export default function Cart() {
                 </Button>
               </div>
               {pincodeResult && (
-                <p className={`mt-2 text-sm ${pincodeResult.serviceable ? "text-success" : "text-destructive"}`}>
-                  {pincodeResult.serviceable
-                    ? `Deliverable in ~${pincodeResult.etaDays} day(s) · ${formatMoney(pincodeResult.shippingFee)} shipping`
-                    : "Not deliverable to this pincode yet."}
-                </p>
+                <div className="mt-2 text-sm">
+                  <p className={pincodeResult.serviceable ? "text-success" : "text-destructive"}>
+                    {pincodeResult.serviceable
+                      ? `Deliverable in ~${pincodeResult.etaDays ?? "?"} day(s) · ${formatMoney(pincodeResult.shippingFee ?? 0)} shipping`
+                      : "Not deliverable to this pincode yet."}
+                  </p>
+                  {/* Sellers ship from their own locations, so a mixed cart is several parcels. */}
+                  {pincodeResult.serviceable && pincodeResult.shipments.length > 1 && (
+                    <ul className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+                      {pincodeResult.shipments.map((s) => (
+                        <li key={s.sellerId} className="flex justify-between gap-2">
+                          <span>Shipped by {s.sellerName}</span>
+                          <span>{formatMoney(s.amountPaise)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {pincodeResult.serviceable && !pincodeResult.live && (
+                    <p className="mt-1 text-xs text-muted-foreground">Estimated — final shipping is confirmed at checkout.</p>
+                  )}
+                </div>
               )}
             </CardContent>
           </Card>
@@ -136,9 +158,13 @@ export default function Cart() {
                   <span>-{formatMoney(cart.discount)}</span>
                 </div>
               )}
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Shipping</span>
+                <span>{shipping != null ? formatMoney(shipping) : <span className="text-xs text-muted-foreground">Enter pincode</span>}</span>
+              </div>
               <div className="flex justify-between border-t border-border pt-2 text-base font-extrabold">
-                <span>Total</span>
-                <span>{formatMoney(cart.total)}</span>
+                <span>{shipping != null ? "Total" : "Total (before shipping)"}</span>
+                <span>{formatMoney(grandTotal)}</span>
               </div>
             </div>
 
@@ -158,8 +184,8 @@ export default function Cart() {
         style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}
       >
         <div className="min-w-0 flex-1">
-          <p className="text-xs text-muted-foreground">Total</p>
-          <p className="text-lg font-extrabold">{formatMoney(cart.total)}</p>
+          <p className="text-xs text-muted-foreground">{shipping != null ? "Total" : "Total (before shipping)"}</p>
+          <p className="text-lg font-extrabold">{formatMoney(grandTotal)}</p>
         </div>
         <Link to="/checkout">
           <Button size="lg">Proceed to Checkout</Button>

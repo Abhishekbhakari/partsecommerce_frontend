@@ -12,6 +12,8 @@ import { getErrorMessage } from "@/Common/types/api";
 import { guestAddressSchema, guestEmailSchema } from "../../validators/Checkout";
 import { loadRazorpayScript } from "@/Common/lib/razorpay";
 
+import type { PincodeCheckResponse } from "../../types/cart.types";
+
 export type CheckoutStep = "address" | "payment" | "review";
 
 const emptyGuestAddress = { line1: "", line2: "", city: "", state: "", pincode: "", phone: "" };
@@ -56,6 +58,35 @@ export function useCheckout() {
         .catch(() => setAddresses([]));
     }
   }, [isAuthenticated]);
+
+  // ---- Shipping quote ----------------------------------------------------------------------
+  // The backend adds shipping when the order is created, so the buyer must SEE it before paying —
+  // otherwise the summary shows one number and the payment is another. Priced per seller parcel
+  // from the destination pincode; COD adds a fee, so re-quote when the payment method changes.
+  const deliveryPincode = isAuthenticated
+    ? addresses.find((a) => a.id === selectedAddressId)?.pincode ?? ""
+    : guestAddress.pincode;
+  const [shippingQuote, setShippingQuote] = useState<PincodeCheckResponse | null>(null);
+  const [quotingShipping, setQuotingShipping] = useState(false);
+
+  useEffect(() => {
+    if (!cart || !/^\d{6}$/.test(deliveryPincode)) {
+      setShippingQuote(null);
+      return;
+    }
+    let cancelled = false;
+    setQuotingShipping(true);
+    cartService
+      .checkPincode(deliveryPincode, paymentMethod === "cod")
+      .then((res) => !cancelled && setShippingQuote(res.data))
+      .catch(() => !cancelled && setShippingQuote(null))
+      .finally(() => !cancelled && setQuotingShipping(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [cart, deliveryPincode, paymentMethod]);
+
+  const shipping = shippingQuote?.serviceable ? shippingQuote.shippingFee : null;
 
   const setGuestField = (key: keyof typeof emptyGuestAddress, value: string) =>
     setGuestAddress((a) => ({ ...a, [key]: value }));
@@ -187,6 +218,9 @@ export function useCheckout() {
     isAuthenticated,
     paymentMethod,
     setPaymentMethod,
+    shippingQuote,
+    quotingShipping,
+    shipping,
     goToPayment,
     goToReview,
     placeOrder,

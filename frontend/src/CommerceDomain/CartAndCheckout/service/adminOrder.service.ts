@@ -8,5 +8,6 @@ export const adminOrderService = {
 
   getById: (id: number | string) => api.get<Order>(`/orders/${id}`),
 
-  updateStatus: (id: number, status: OrderStatus) => api.patch<Order>(`/admin/orders/${id}/status`, { status })
+  updateStatus: (id: number, status: OrderStatus, overrideReason?: string) =>
+    api.patch<Order>(`/admin/orders/${id}/status`, { status, ...(overrideReason ? { overrideReason } : {}) })
 };

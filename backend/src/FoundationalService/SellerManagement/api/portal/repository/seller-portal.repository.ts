@@ -8,7 +8,8 @@ import {
     ShipmentItem,
     SellerPayout,
     User,
-    FulfillmentProof
+    FulfillmentProof,
+    Seller
 } from '../../../../../Common/database/models';
 
 class SellerPortalRepository {
@@ -35,6 +36,10 @@ class SellerPortalRepository {
         return OrderItem.findByPk(id, {
             include: [{ model: Order, as: 'order' }, { model: FulfillmentProof, as: 'proofs' }]
         });
+    }
+
+    updateSellerProfile(id: number, data: Record<string, unknown>) {
+        return Seller.update(data as never, { where: { id } });
     }
 
     createProof(data: { orderItemId: number; sellerId: number; stage: 'dispatch' | 'delivery'; imageUrls: string[]; note?: string | null }) {

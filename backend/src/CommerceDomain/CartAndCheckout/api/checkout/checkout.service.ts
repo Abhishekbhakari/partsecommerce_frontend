@@ -5,6 +5,7 @@ import { BadRequestException, ForbiddenException, ValidationException } from '..
 import { CheckoutPayload } from './validations/checkout.validation';
 import { generateOrderNumber } from '../../../../Common/utils/Slugify';
 import CommissionUtil from '../../../../Common/utils/CommissionUtil';
+import ShippingRateService, { chargeableShippingPaise, toQuoteItems, QuotableRow } from '../../../ShippingManagement/api/rates/shippingRate.service';
 
 interface CartItemRow {
     id: number;
@@ -19,7 +20,9 @@ interface CartItemRow {
 
 class CheckoutService {
     async checkout(req: Request, payload: CheckoutPayload) {
-        const userId = req.user?.userId;
+        // Same principal rule as the cart: only a customer token is a customer. An admin/seller
+        // token must not place orders under customer #<their own id>.
+        const userId = req.user?.type === 'customer' ? req.user.userId : undefined;
         if (!userId && !payload.guestEmail) {
             throw new BadRequestException('guestEmail is required for guest checkout.');
         }
@@ -38,6 +41,10 @@ class CheckoutService {
         // Resolve shipping address — saved address (owned by this user) or an inline one.
         let shippingAddress: Record<string, unknown>;
         if (payload.addressId) {
+            // Saved addresses belong to accounts. Without a customer login there's nobody to check
+            // ownership against, and a guest could otherwise pass any addressId, copy another
+            // person's address onto their own order, and read it back from the order detail.
+            if (!userId) throw new ForbiddenException('Sign in to use a saved address, or enter one.');
             const address = await CheckoutRepository.findAddress(payload.addressId);
             if (!address) throw new BadRequestException('Address not found.');
             if (userId && address.userId !== userId) throw new ForbiddenException();
@@ -70,7 +77,16 @@ class CheckoutService {
         }
         discount = Math.min(discount, subtotal);
 
-        const shippingFee = subtotal - discount >= 99900 ? 0 : 4900; // free shipping above INR 999
+        // Shipping is priced per seller parcel from the buyer's pincode (live Shiprocket rates when
+        // configured, otherwise our estimate table) — see ShippingRateService. The per-seller
+        // breakdown is snapshotted on the order so a later rate change never rewrites history.
+        const deliveryPincode = String((shippingAddress as { pincode?: unknown }).pincode ?? '');
+        const shippingQuote = await ShippingRateService.quote(
+            toQuoteItems(items as unknown as QuotableRow[]),
+            deliveryPincode,
+            payload.paymentMethod === 'cod'
+        );
+        const shippingFee = chargeableShippingPaise(shippingQuote, subtotal - discount);
         const total = subtotal - discount + shippingFee;
 
         // Commission is computed and snapshotted at checkout time, per seller — a later rate
@@ -102,6 +118,7 @@ class CheckoutService {
                 guestEmail: userId ? null : payload.guestEmail,
                 status: 'pending',
                 shippingAddress,
+                shippingBreakdown: shippingQuote.shipments,
                 subtotal,
                 discount,
                 shippingFee,

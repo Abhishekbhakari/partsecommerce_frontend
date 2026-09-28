@@ -1,5 +1,5 @@
 import api from "@/Common/lib/api";
-import type { Order, OrderItem, Product, SellerDashboardStats, SellerPayout } from "@/Common/types/entities";
+import type { Order, OrderItem, PickupAddress, Product, SellerDashboardStats, SellerPayout } from "@/Common/types/entities";
 import type { ProductListResponse } from "@/CommerceDomain/CatalogManagement/types/catalog.types";
 
 export interface SellerOrderItemRow extends OrderItem {
@@ -38,6 +38,9 @@ export const sellerService = {
    * and when marking it delivered (it 400s otherwise) — see SellerOrders' proof dialog. */
   updateFulfillment: (orderItemId: number, status: string, proof?: { proofImages: string[]; note?: string }) =>
     api.patch<SellerOrderItemRow>(`/seller/orders/items/${orderItemId}/fulfillment`, { status, ...proof }),
+
+  updatePickupAddress: (pickupAddress: PickupAddress) =>
+    api.patch<{ pickupAddress: PickupAddress }>("/seller/profile", { pickupAddress }),
 
   // Contract deviation found live: backend returns `{ payouts: [...], pendingBalance }`, not
   // `{ items: [...] }` like every other list endpoint in this app — verified via

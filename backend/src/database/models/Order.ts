@@ -17,6 +17,7 @@ export interface OrderAttributes {
     guestEmail: string | null;
     status: OrderStatus;
     shippingAddress: Record<string, unknown>;
+    shippingBreakdown: unknown[] | null;
     subtotal: number;
     discount: number;
     shippingFee: number;
@@ -37,6 +38,7 @@ export type OrderCreationAttributes = Optional<
     | 'discount'
     | 'shippingFee'
     | 'couponId'
+    | 'shippingBreakdown'
     | 'placedAt'
     | 'createdAt'
     | 'updatedAt'
@@ -52,6 +54,7 @@ export class Order
     declare guestEmail: string | null;
     declare status: OrderStatus;
     declare shippingAddress: Record<string, unknown>;
+    declare shippingBreakdown: unknown[] | null;
     declare subtotal: number;
     declare discount: number;
     declare shippingFee: number;
@@ -83,6 +86,7 @@ Order.init(
             defaultValue: 'pending'
         },
         shippingAddress: { type: DataTypes.JSONB, allowNull: false },
+        shippingBreakdown: { type: DataTypes.JSONB, allowNull: true },
         subtotal: { type: DataTypes.INTEGER, allowNull: false },
         discount: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
         shippingFee: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },

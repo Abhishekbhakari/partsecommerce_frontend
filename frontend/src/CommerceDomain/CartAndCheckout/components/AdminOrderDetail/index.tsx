@@ -5,9 +5,10 @@ import { Card, CardContent } from "@/Common/components/ui/card";
 import { Button } from "@/Common/components/ui/button";
 import { Spinner } from "@/Common/components/ui/spinner";
 import { ProofGallery } from "@/Common/components/ProofGallery";
+import { OverrideDialog } from "./OverrideDialog";
 
 export default function AdminOrderDetail() {
-  const { order, loading, updating, updateStatus, statusFlow } = useAdminOrderDetail();
+  const { order, loading, updating, updateStatus, statusFlow, overrideFor, cancelOverride } = useAdminOrderDetail();
 
   if (loading) return <Spinner />;
   if (!order) return <p className="py-16 text-center text-sm text-muted-foreground">Order not found.</p>;
@@ -100,6 +101,14 @@ export default function AdminOrderDetail() {
           </Card>
         </div>
       </div>
+
+      <OverrideDialog
+        open={overrideFor != null}
+        status={overrideFor ?? "shipped"}
+        submitting={updating}
+        onCancel={cancelOverride}
+        onConfirm={(reason) => overrideFor && updateStatus(overrideFor, reason)}
+      />
     </div>
   );
 }
